@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/orpheus/strings/core"
-	log2 "github.com/orpheus/strings/infrastructure/log"
+	"github.com/orpheus/strings/infrastructure/logging"
 	"log"
 	"net/http"
 )
@@ -14,7 +14,7 @@ import (
 // into our application
 type StringController struct {
 	Interactor StringInteractor
-	Logger     log2.Logger
+	Logger     logging.Logger
 }
 
 // StringInteractor defines the service interface the controller will usee

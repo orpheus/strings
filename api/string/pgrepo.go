@@ -5,13 +5,13 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/orpheus/strings/api"
 	"github.com/orpheus/strings/core"
-	log2 "github.com/orpheus/strings/infrastructure/log"
+	"github.com/orpheus/strings/infrastructure/logging"
 	"log"
 )
 
 type StringRepository struct {
 	DB     api.PgxConn
-	Logger log2.Logger
+	Logger logging.Logger
 }
 
 func (s *StringRepository) FindAll() ([]core.String, error) {

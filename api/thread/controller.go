@@ -5,14 +5,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/orpheus/strings/core"
-	log2 "github.com/orpheus/strings/infrastructure/log"
+	"github.com/orpheus/strings/infrastructure/logging"
 	"log"
 	"net/http"
 )
 
 type Controller struct {
 	Interactor Interactor
-	Logger     log2.Logger
+	Logger     logging.Logger
 }
 
 type Interactor interface {

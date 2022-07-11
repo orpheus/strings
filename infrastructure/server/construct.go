@@ -5,12 +5,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/orpheus/strings/api/string"
 	"github.com/orpheus/strings/api/thread"
-	"github.com/orpheus/strings/infrastructure/log"
+	"github.com/orpheus/strings/infrastructure/logging"
 	"github.com/orpheus/strings/system"
 )
 
 func Construct(r *gin.Engine, conn *pgxpool.Pool) {
-	tmpLogger := &log.TmpLogger{}
+	tmpLogger := &logging.TmpLogger{}
 
 	v1Router := r.Group("/api")
 	v1Router.GET("/health", func(c *gin.Context) {

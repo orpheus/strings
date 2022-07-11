@@ -3,12 +3,13 @@ package system
 import (
 	"github.com/gofrs/uuid"
 	"github.com/orpheus/strings/core"
-	"github.com/orpheus/strings/infrastructure/log"
+	"github.com/orpheus/strings/infrastructure/logging"
 )
 
 type ThreadInteractor struct {
-	Repo   ThreadRepository
-	Logger log.Logger
+	Repo          ThreadRepository
+	StringDeleter StringDeleter
+	Logger        logging.Logger
 }
 
 type ThreadRepository interface {

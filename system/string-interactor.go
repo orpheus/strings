@@ -3,12 +3,12 @@ package system
 import (
 	"github.com/gofrs/uuid"
 	"github.com/orpheus/strings/core"
-	"github.com/orpheus/strings/infrastructure/log"
+	"github.com/orpheus/strings/infrastructure/logging"
 )
 
 type StringInteractor struct {
 	StringRepository StringRepository
-	Logger           log.Logger
+	Logger           logging.Logger
 }
 
 type StringRepository interface {
