@@ -34,3 +34,21 @@ a system up that will allow me to visually and programmatically see patterns in 
 
 So after a mid-year, cross-state move, I decided the first thing I needed was to get my goals and focuses back into order,
 but do so, so that I can get the benefits described above. So I started, **Strings**.
+
+### Start
+
+Make sure `postgres` is installed on your local system and running with a database
+called `strings`. Swap the environment variables with ones for your system.
+
+With `go` installed, run:
+
+```
+DB_USER=postgres \
+DB_PASS=password \
+DB_NAME=strings \
+DB_HOST=localhost \
+DB_PORT=5432 \
+go run main.go
+```
+
+Service will be listening on port `8080`
