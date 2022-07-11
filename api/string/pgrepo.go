@@ -45,7 +45,8 @@ func (s *StringRepository) FindAll() ([]core.String, error) {
 }
 
 func (s *StringRepository) FindAllByThread(threadId uuid.UUID) ([]core.String, error) {
-	rows, err := s.DB.Query(context.Background(), "select * from string where thread = $1", threadId)
+	sql := "select * from string where thread = $1 order by \"order\" asc"
+	rows, err := s.DB.Query(context.Background(), sql, threadId)
 	if err != nil {
 		return nil, err
 	}
@@ -90,5 +91,11 @@ func (s *StringRepository) DeleteById(id uuid.UUID) error {
 	// TODO(Check if exists first, so you can let client know he did what was expected)
 	sql := "delete from string where id = $1"
 	_, err := s.DB.Exec(context.Background(), sql, id)
+	return err
+}
+
+func (s *StringRepository) DeleteAllByThread(threadId uuid.UUID) error {
+	sql := "delete from string where thread = $1"
+	_, err := s.DB.Exec(context.Background(), sql, threadId)
 	return err
 }

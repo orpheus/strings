@@ -29,8 +29,9 @@ func Construct(r *gin.Engine, conn *pgxpool.Pool) {
 
 	threadController := &thread.Controller{
 		Interactor: &system.ThreadInteractor{
-			Repo:   threadRepository,
-			Logger: tmpLogger,
+			Repo:          threadRepository,
+			StringDeleter: stringRepository,
+			Logger:        tmpLogger,
 		},
 		Logger: tmpLogger,
 	}
