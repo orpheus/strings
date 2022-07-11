@@ -38,7 +38,7 @@ func (s *StringController) RegisterRoutes(router *gin.RouterGroup) {
 // FindAll fetches all strings or all strings associated with a certain
 // thread if you pass a uuid as a `thread` query param
 func (s *StringController) FindAll(c *gin.Context) {
-	thread := c.Param("thread")
+	thread := c.Query("thread")
 	if thread == "" {
 		strings, err := s.Interactor.FindAll()
 		if err != nil {
