@@ -16,6 +16,8 @@ type StringRepository interface {
 	FindAllByThread(threadId uuid.UUID) ([]core.String, error)
 	CreateOne(core.String) (core.String, error)
 	DeleteById(id uuid.UUID) error
+	UpdateName(stringId uuid.UUID, name string) error
+	UpdateOrder(stringOrders []core.StringOrder) error
 }
 
 func (s *StringInteractor) FindAll() ([]core.String, error) {
@@ -32,4 +34,12 @@ func (s *StringInteractor) CreateOne(string core.String) (core.String, error) {
 
 func (s *StringInteractor) DeleteById(id uuid.UUID) error {
 	return s.StringRepository.DeleteById(id)
+}
+
+func (s *StringInteractor) UpdateName(stringId uuid.UUID, name string) error {
+	return s.StringRepository.UpdateName(stringId, name)
+}
+
+func (s *StringInteractor) UpdateOrder(stringOrders []core.StringOrder) error {
+	return s.StringRepository.UpdateOrder(stringOrders)
 }

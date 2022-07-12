@@ -2,6 +2,7 @@ package string
 
 import (
 	"context"
+	"fmt"
 	"github.com/gofrs/uuid"
 	"github.com/orpheus/strings/api"
 	"github.com/orpheus/strings/core"
@@ -97,5 +98,42 @@ func (s *StringRepository) DeleteById(id uuid.UUID) error {
 func (s *StringRepository) DeleteAllByThread(threadId uuid.UUID) error {
 	sql := "delete from string where thread = $1"
 	_, err := s.DB.Exec(context.Background(), sql, threadId)
+	return err
+}
+
+func (s *StringRepository) UpdateName(stringId uuid.UUID, name string) error {
+	sql := "update string set name = $1 where id = $2"
+	res, err := s.DB.Exec(context.Background(), sql, name, stringId)
+	fmt.Println("UpdateName Exec: ", res.String())
+
+	return err
+}
+
+func (s *StringRepository) UpdateOrder(stringOrders []core.StringOrder) error {
+	ctx := context.Background() // is it safe to share context with multiple functions?
+
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Rollback is safe to call even if the tx is already closed, so if
+	// the tx commits successfully, this is a no-op
+	defer tx.Rollback(ctx)
+
+	sql := "update string set \"order\" = $1 where id = $2"
+
+	for _, stringOrder := range stringOrders {
+		_, err = tx.Exec(context.Background(), sql, stringOrder.Order, stringOrder.Id)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
 	return err
 }

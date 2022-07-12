@@ -14,3 +14,8 @@ type String struct {
 	DateCreated  time.Time `json:"dateCreated"`
 	DateModified time.Time `json:"dateModified"`
 }
+
+type StringOrder struct {
+	Id    uuid.UUID `json:"id"`
+	Order int       `json:"order"`
+}
