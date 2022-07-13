@@ -1,35 +1,42 @@
 --
 -- Initial setup
 --
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE
+EXTENSION IF NOT EXISTS "uuid-ossp";
 
 --
 -- Thread
 --
 CREATE TABLE IF NOT EXISTS thread
 (
-    id            UUID PRIMARY KEY                  DEFAULT uuid_generate_v4(),
-    name          VARCHAR UNIQUE           NOT NULL,
-    description   VARCHAR,
-    date_created  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4
+(
+),
+    name VARCHAR UNIQUE NOT NULL,
+    description VARCHAR,
+    date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+                                );
 
 --
 -- String
 --
 CREATE TABLE IF NOT EXISTS string
 (
-    id            UUID PRIMARY KEY                  DEFAULT uuid_generate_v4(),
-    name          VARCHAR UNIQUE           NOT NULL,
-    "order"       INT                      NOT NULL,
-    thread        UUID                     NOT NULL,
-    description   VARCHAR,
-    date_created  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4
+(
+),
+    name VARCHAR NOT NULL,
+    "order" INT NOT NULL,
+    thread UUID NOT NULL,
+    description VARCHAR,
+    date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_thread_id FOREIGN KEY (thread) REFERENCES thread (id)
-);
+                                CONSTRAINT fk_thread_id FOREIGN KEY (thread) REFERENCES thread
+(
+    id
+)
+    );
 
 -- --
 -- -- Skill
