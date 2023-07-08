@@ -7,33 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
-## [0.1.0] - 2022-07-14
-0.1.0 brings thread and string crud functionality with the ability to update and save string order
+## [1.0.0] - 2022-07-07
 
-### [2022-07-13]
-#### Removed
+### Notes
+- releasing current version as v1 as have been using it for a year with great success
+
+## [0.1.0] - 2022-07-14
+
+### Added
+- 0.1.0 brings thread and string crud functionality with the ability to update and save string order
+
+## [2022-07-13]
+
+### Removed
 - unique constraint on `string.name`
   - TODO("Check uniqueness of name within a given thread on creation")
-### [2022-07-12]
-#### Added
+
+## [2022-07-12]
+  
+### Added
 - update string name api
 - update string order api
 
-### [2022-07-11]
-#### Updated
+## [2022-07-11]
+
+### Updated
 - delete thread now deletes all associated strings first
 - fetch strings by thread in order
 
-#### Fixed
+### Fixed
 - string FindAll wasn't using the right function to get the query parameter for `thread` id
 
-### [2022-07-09]
-#### Added
+## [2022-07-09]
+
+### Added
 - createOne/deleteById/findAll strings
 
-### [2022-07-06]
-#### Added
+## [2022-07-06]
+
+### Added
 - createOne/deleteById/findAll threads
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.0.0...v1.1.0
+[unreleased]: https://github.com/orpheus/strings/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/orpheus/strings/releases/tag/v1.0.0

@@ -16,7 +16,7 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	dbUser := getEnv("DB_USER", "roark")
+	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASS", "")
 	dbName := getEnv("DB_NAME", "strings")
 	dbHost := getEnv("DB_HOST", "localhost")
