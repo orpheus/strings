@@ -1,5 +1,7 @@
 .PHONY: help build start printos
 
+timestamp := $(shell date +'%Y_%m_%d_%H_%M_%S')
+
 help: ## : Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_%-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' ${MAKEFILE_LIST}
 
@@ -16,4 +18,5 @@ start: build ## : Start the client
     DB_PORT=5432 \
     ${GOPATH}/bin/strings
 
-
+dump: ## : dump postgres database
+	/usr/local/bin/pg_dump --dbname=strings --file="${HOME}/strings_localhost-$(timestamp)-dump.sql" --username=postgres --host=localhost --port=5432
