@@ -14,6 +14,6 @@ start: build ## : Start the client
     DB_NAME=strings \
     DB_HOST=localhost \
     DB_PORT=5432 \
-    strings
+    ${GOPATH}/bin/strings
 
 
