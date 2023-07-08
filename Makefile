@@ -16,6 +16,4 @@ start: build ## : Start the client
     DB_PORT=5432 \
     strings
 
-printos: ## : Print operating system variables
-	echo $OSTYPE
-	uname -m
+
