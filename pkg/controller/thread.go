@@ -1,4 +1,4 @@
-package thread
+package controller
 
 import (
 	"fmt"

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/orpheus/strings/infrastructure/postgres"
-	"github.com/orpheus/strings/infrastructure/server"
+	"github.com/orpheus/strings/pkg/infrastructure/postgres"
+	"github.com/orpheus/strings/pkg/infrastructure/server"
 	"os"
 )
 
@@ -18,7 +18,7 @@ func getEnv(key, fallback string) string {
 func main() {
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASS", "")
-	dbName := getEnv("DB_NAME", "strings")
+	dbName := getEnv("DB_NAME", "strings-v2")
 	dbHost := getEnv("DB_HOST", "localhost")
 	dbPort := getEnv("DB_PORT", "5432")
 

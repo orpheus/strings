@@ -13,7 +13,7 @@ build: ## : Build dependencies
 start: build ## : Start the client
 	DB_USER=postgres \
     DB_PASS= \
-    DB_NAME=strings \
+    DB_NAME=strings-v2 \
     DB_HOST=localhost \
     DB_PORT=5432 \
     ${GOPATH}/bin/strings
