@@ -2,6 +2,8 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/orpheus/strings/pkg/repo/threads"
 )
 
 type ThreadController struct {
@@ -9,13 +11,21 @@ type ThreadController struct {
 }
 
 type ThreadService interface {
+	PostThread(thread threads.Thread) (threads.Thread, error)
+	GetThreads() ([]threads.Thread, error)
+	GetThreadIds() ([]uuid.UUID, error) // used if ?only_ids=true
+	ArchiveThread(id uuid.UUID) (threads.Thread, error)
+	RestoreThread(id uuid.UUID) (threads.Thread, error)
+	ActivateThread(id uuid.UUID) (threads.Thread, error)
+	DeactivateThread(id uuid.UUID) (threads.Thread, error)
+	DeleteThread(id uuid.UUID) (threads.Thread, error)
 }
 
 func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
 	threads := router.Group("/threads")
 	{
 		threads.POST("", t.PostThreads)
-		threads.GET("", t.PostThreads)
+		threads.GET("", t.GetThreads)
 	}
 
 	thread := router.Group("/thread")
@@ -30,6 +40,10 @@ func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
 }
 
 func (t *ThreadController) PostThreads(c *gin.Context) {
+
+}
+
+func (t *ThreadController) GetThreads(c *gin.Context) {
 
 }
 

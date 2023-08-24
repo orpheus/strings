@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/repo/threads"
 )
 
@@ -18,7 +18,6 @@ type StringsService interface {
 	DeleteString(id uuid.UUID) (threads.Thread, error)
 }
 
-// RegisterRoutes creates a gin route grouping for the `/string` routes
 func (s *StringController) RegisterRoutes(router *gin.RouterGroup) {
 	strings := router.Group("/strings")
 	{
