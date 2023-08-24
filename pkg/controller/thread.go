@@ -1,72 +1,54 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid"
-	"github.com/orpheus/strings/core"
-	"github.com/orpheus/strings/infrastructure/logging"
-	"log"
-	"net/http"
 )
 
-type Controller struct {
-	Interactor Interactor
-	Logger     logging.Logger
+type ThreadController struct {
+	ThreadService ThreadService
 }
 
-type Interactor interface {
-	FindAll() ([]core.Thread, error)
-	CreateOne(thread core.Thread) (core.Thread, error)
-	DeleteById(id uuid.UUID) error
+type ThreadService interface {
 }
 
-func (s *Controller) RegisterRoutes(router *gin.RouterGroup) {
+func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
+	threads := router.Group("/threads")
+	{
+		threads.POST("", t.PostThreads)
+		threads.GET("", t.PostThreads)
+	}
+
 	thread := router.Group("/thread")
 	{
-		thread.GET("", s.FindAll)
-		thread.POST("", s.CreateOne)
-		thread.DELETE("/:id", s.DeleteById)
+		thread.GET("", t.Archive)
+		thread.POST("/archive/:id", t.Archive)
+		thread.POST("/restore/:id", t.Restore)
+		thread.POST("/activate/:id", t.Activate)
+		thread.POST("/deactivate/:id", t.Deactivate)
+		thread.POST("/delete/:id", t.Delete)
 	}
 }
 
-func (s *Controller) FindAll(c *gin.Context) {
-	threads, err := s.Interactor.FindAll()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.IndentedJSON(http.StatusOK, threads)
+func (t *ThreadController) PostThreads(c *gin.Context) {
+
 }
 
-func (s *Controller) CreateOne(c *gin.Context) {
-	var thread core.Thread
-	if err := c.ShouldBindJSON(&thread); err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-	newThread, err := s.Interactor.CreateOne(thread)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("%s", err.Error())},
-		)
-		return
-	}
-	c.IndentedJSON(http.StatusOK, newThread)
+func (t *ThreadController) Archive(c *gin.Context) {
+
 }
 
-func (s *Controller) DeleteById(c *gin.Context) {
-	threadId, err := uuid.FromString(c.Param("id"))
-	if err != nil {
-		log.Fatalf("failed to parse UUID %q: %v", s, err)
-	}
+func (t *ThreadController) Restore(c *gin.Context) {
 
-	err = s.Interactor.DeleteById(threadId)
+}
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
-		return
-	}
+func (t *ThreadController) Activate(c *gin.Context) {
 
-	c.IndentedJSON(http.StatusOK, true)
+}
+
+func (t *ThreadController) Deactivate(c *gin.Context) {
+
+}
+
+func (t *ThreadController) Delete(c *gin.Context) {
+
 }
