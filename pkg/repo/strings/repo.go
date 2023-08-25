@@ -1,5 +1,7 @@
 package strings
 
+import "github.com/orpheus/strings/pkg/infra/sqldb"
+
 type StringRepository struct {
-	DB sqldb.PgxConn
+	*sqldb.Store
 }

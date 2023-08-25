@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/orpheus/strings/pkg/infra/sqldb"
 	"github.com/orpheus/strings/pkg/repo/threads"
 	"github.com/orpheus/strings/pkg/service"
 	"net/http"
 )
 
-func NewThreadController(router *gin.RouterGroup) *ThreadController {
+func NewThreadController(router *gin.RouterGroup, store *sqldb.Store) *ThreadController {
 	controller := &ThreadController{
 		ThreadService: service.NewThreadService(
-			threads.NewThreadRepository(nil),
+			threads.NewThreadRepository(store),
 		),
 	}
 

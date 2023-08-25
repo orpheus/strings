@@ -6,8 +6,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/orpheus/strings/pkg/infra/sqldb/migrations"
-	"github.com/orpheus/strings/pkg/utils"
 	"path/filepath"
 )
 
@@ -27,16 +25,6 @@ type ConnConfig struct {
 	User   string
 	Pass   string
 	Dbname string
-}
-
-func GetPostgresEnvConfig() ConnConfig {
-	return ConnConfig{
-		Host:   utils.GetEnv("CPS_DB_HOST", "localhost"),
-		Port:   utils.GetEnv("CPS_DB_PORT", "5432"),
-		User:   utils.GetEnv("CPS_DB_USER", "postgres"),
-		Pass:   utils.GetEnv("CPS_DB_PASS", ""),
-		Dbname: utils.GetEnv("CPS_DB_NAME", "cps_test"),
-	}
 }
 
 type Store struct {
@@ -65,6 +53,10 @@ func (s *Store) GetExecutor(isAtomic bool) (QueryAble, error) {
 	return x, nil
 }
 
+func (s *Store) Close() error {
+	return s.Db.Close()
+}
+
 // NewStore opens a new connection to a database using the given driver
 // and a connection url called a Data Source Name (DSN).
 //
@@ -82,22 +74,6 @@ func NewStore(driverName string, config ConnConfig) (*Store, error) {
 
 func createPostgresDsn(config ConnConfig) string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", config.User, config.Pass, config.Host, config.Port, config.Dbname)
-}
-
-func CreateStoreAndMigrate(cpsRootDir string) (*Store, error) {
-	config := GetPostgresEnvConfig()
-	sqlStore, err := NewStore(DriverPostgres, config)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to connect %s to db: %s\n", DriverPostgres, err.Error())
-	}
-
-	// assuming run from root
-	err = migrations.Migrate(filepath.Join(cpsRootDir, PostgresMigrationsDirAbs), sqlStore.Db)
-	if err != nil {
-		return nil, fmt.Errorf("failed to run migrations: %s\n", err.Error())
-	}
-
-	return sqlStore, nil
 }
 
 // NewMockStore based off: https://github.com/jmoiron/sqlx/issues/204
