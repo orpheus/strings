@@ -7,16 +7,25 @@ help: ## : Show this help
 
 build: ## : Build dependencies
 	go mod tidy
-	GOOS=darwin GOARCH=amd64 go build -o build/strings main.go
-	rm -f "${GOPATH}/bin/strings" && cp build/strings "${GOPATH}/bin"
+	GOOS=darwin GOARCH=amd64 go build -o build/strings cmd/strings/main.go
+	#rm -f "${GOPATH}/bin/strings" && cp build/strings "${GOPATH}/bin"
 
 start: build ## : Start the client
 	DB_USER=postgres \
     DB_PASS= \
-    DB_NAME=strings-v2 \
+    DB_NAME=stringsv2 \
     DB_HOST=localhost \
     DB_PORT=5432 \
-    ${GOPATH}/bin/strings
+    ./build/strings
+#    ${GOPATH}/bin/strings
+
+run: ## : Run app without build
+	DB_USER=postgres \
+	DB_PASS= \
+	DB_NAME=stringsv2 \
+	DB_HOST=localhost \
+	DB_PORT=5432 \
+	./build/strings
 
 dump: ## : dump postgres database
 	/usr/local/bin/pg_dump --dbname=strings --file="${HOME}/strings_localhost-$(timestamp)-dump.sql" --username=postgres --host=localhost --port=5432

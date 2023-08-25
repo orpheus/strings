@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/orpheus/strings/pkg/infrastructure/postgres"
-	"github.com/orpheus/strings/pkg/infrastructure/server"
+	"github.com/orpheus/strings/pkg/infra/ginserver"
+	"github.com/orpheus/strings/pkg/infra/postgres"
 	"os"
 )
 
@@ -18,7 +18,7 @@ func getEnv(key, fallback string) string {
 func main() {
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASS", "")
-	dbName := getEnv("DB_NAME", "strings-v2")
+	dbName := getEnv("DB_NAME", "stringsv2")
 	dbHost := getEnv("DB_HOST", "localhost")
 	dbPort := getEnv("DB_PORT", "5432")
 
@@ -27,8 +27,8 @@ func main() {
 	defer conn.Close()
 	postgres.Migrate(conn)
 
-	s := server.NewGin()
-	server.Construct(s, conn)
+	s := ginserver.NewGin()
+	ginserver.Construct(s, conn)
 
 	err := s.Run()
 	if err != nil {

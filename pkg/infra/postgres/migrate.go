@@ -12,7 +12,7 @@ import (
 )
 
 func Migrate(conn *pgxpool.Pool) {
-	sqlPath := "infrastructure/postgres/sql"
+	sqlPath := "pkg/infra/postgres/sql"
 	files, err := ioutil.ReadDir(sqlPath)
 	if err != nil {
 		log.Fatalf("Can not find sql at sqlPath (%s): %s", sqlPath, err.Error())

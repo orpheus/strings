@@ -40,7 +40,8 @@ func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
 }
 
 func (t *ThreadController) PostThreads(c *gin.Context) {
-
+	//var thread threads.Thread
+	//err := c.BindJSON(&thread)
 }
 
 func (t *ThreadController) GetThreads(c *gin.Context) {
