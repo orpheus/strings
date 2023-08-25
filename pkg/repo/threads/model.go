@@ -20,3 +20,5 @@ type Thread struct {
 	DateCreated time.Time        `json:"dateCreated"`
 	Strings     []strings.String `json:"strings"`
 }
+
+//func (t *Thread)

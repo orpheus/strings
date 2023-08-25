@@ -2,7 +2,7 @@ package ginserver
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/orpheus/strings/pkg/controller"
 )
 

@@ -5,11 +5,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/repo/threads"
+	"github.com/orpheus/strings/pkg/service"
 	"net/http"
 )
 
 func NewThreadController(router *gin.RouterGroup) *ThreadController {
-	controller := &ThreadController{}
+	controller := &ThreadController{
+		ThreadService: service.NewThreadService(
+			threads.NewThreadRepository(nil),
+		),
+	}
 
 	controller.RegisterRoutes(router)
 
@@ -21,14 +26,14 @@ type ThreadController struct {
 }
 
 type ThreadService interface {
-	PostThread(thread threads.Thread) (threads.Thread, error)
+	PostThread(thread *threads.Thread) (*threads.Thread, error)
 	GetThreads() ([]threads.Thread, error)
 	GetThreadIds() ([]uuid.UUID, error) // used if ?only_ids=true
-	ArchiveThread(id uuid.UUID) (threads.Thread, error)
-	RestoreThread(id uuid.UUID) (threads.Thread, error)
-	ActivateThread(id uuid.UUID) (threads.Thread, error)
-	DeactivateThread(id uuid.UUID) (threads.Thread, error)
-	DeleteThread(id uuid.UUID) (threads.Thread, error)
+	ArchiveThread(id uuid.UUID) (*threads.Thread, error)
+	RestoreThread(id uuid.UUID) (*threads.Thread, error)
+	ActivateThread(id uuid.UUID) (*threads.Thread, error)
+	DeactivateThread(id uuid.UUID) (*threads.Thread, error)
+	DeleteThread(id uuid.UUID) (*threads.Thread, error)
 }
 
 func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
@@ -59,7 +64,7 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 		return
 	}
 
-	threadsResponse, err := t.ThreadService.PostThread(thread)
+	threadsResponse, err := t.ThreadService.PostThread(&thread)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("ThreadService.PostThread failed: %s", err)))
 	}

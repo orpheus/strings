@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/orpheus/strings/pkg/infra/ginserver"
-	"github.com/orpheus/strings/pkg/infra/postgres"
 	"os"
 )
 
@@ -23,9 +22,9 @@ func main() {
 	dbPort := getEnv("DB_PORT", "5432")
 
 	jdbcUrl := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbName)
-	conn := postgres.NewPgxPool(jdbcUrl)
+	conn := sqldb.NewPgxPool(jdbcUrl)
 	defer conn.Close()
-	postgres.Migrate(conn)
+	sqldb.Migrate(conn)
 
 	s := ginserver.NewGin()
 	ginserver.Construct(s, conn)
