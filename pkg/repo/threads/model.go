@@ -1,7 +1,7 @@
 package threads
 
 import (
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/repo/strings"
 	"time"
 )
