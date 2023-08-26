@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/orpheus/strings/pkg/repo/threads"
+	"github.com/orpheus/strings/pkg/core"
 )
 
 type StringController struct {
@@ -11,11 +11,11 @@ type StringController struct {
 }
 
 type StringsService interface {
-	ArchiveString(id uuid.UUID) (threads.Thread, error)
-	RestoreString(id uuid.UUID) (threads.Thread, error)
-	ActivateString(id uuid.UUID) (threads.Thread, error)
-	DeactivateString(id uuid.UUID) (threads.Thread, error)
-	DeleteString(id uuid.UUID) (threads.Thread, error)
+	ArchiveString(id uuid.UUID) (core.Thread, error)
+	RestoreString(id uuid.UUID) (core.Thread, error)
+	ActivateString(id uuid.UUID) (core.Thread, error)
+	DeactivateString(id uuid.UUID) (core.Thread, error)
+	DeleteString(id uuid.UUID) (core.Thread, error)
 }
 
 func (s *StringController) RegisterRoutes(router *gin.RouterGroup) {

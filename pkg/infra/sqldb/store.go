@@ -32,14 +32,14 @@ type Store struct {
 	Tx *sqlx.Tx
 }
 
-// GetExecutor checks if the required behavior is Atomic (transaction-based)
+// GetAtomicExecutor checks if the required behavior is Atomic (transaction-based)
 // and if it is, and no transaction exist, returns an error.
 // If a transaction is in place, it will return the *sql.Tx object
 // instead of the *sql.DB object as a QueryAble interface which Repositories
 // can use a sql executor.
 //
 // TL;DR: Determines the sql object to use for queries.
-func (s *Store) GetExecutor(isAtomic bool) (QueryAble, error) {
+func (s *Store) GetAtomicExecutor(isAtomic bool) (QueryAble, error) {
 	if isAtomic && s.Tx == nil {
 		return nil, ErrTransactionNotStarted
 	}
@@ -51,6 +51,16 @@ func (s *Store) GetExecutor(isAtomic bool) (QueryAble, error) {
 	}
 
 	return x, nil
+}
+
+func (s *Store) GetExecutor() QueryAble {
+	var x QueryAble
+	x = s.Db
+	if s.Tx != nil {
+		x = s.Tx
+	}
+
+	return x
 }
 
 func (s *Store) Close() error {

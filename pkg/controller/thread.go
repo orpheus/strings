@@ -4,16 +4,23 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/orpheus/strings/pkg/core"
 	"github.com/orpheus/strings/pkg/infra/sqldb"
-	"github.com/orpheus/strings/pkg/repo/threads"
+	"github.com/orpheus/strings/pkg/persistence/dao/stringdao"
+	"github.com/orpheus/strings/pkg/persistence/dao/threaddao"
+	"github.com/orpheus/strings/pkg/persistence/repo/threadrepo"
 	"github.com/orpheus/strings/pkg/service"
 	"net/http"
 )
 
 func NewThreadController(router *gin.RouterGroup, store *sqldb.Store) *ThreadController {
+	threadDao := &threaddao.ThreadDao{Store: store}
+	versionedThreadDao := &threaddao.VersionedThreadDao{Store: store}
+	stringDao := &stringdao.StringDao{Store: store}
+
 	controller := &ThreadController{
 		ThreadService: service.NewThreadService(
-			threads.NewThreadRepository(store),
+			threadrepo.NewThreadRepository(threadDao, stringDao, versionedThreadDao),
 		),
 	}
 
@@ -27,14 +34,14 @@ type ThreadController struct {
 }
 
 type ThreadService interface {
-	PostThread(thread *threads.Thread) (*threads.Thread, error)
-	GetThreads() ([]threads.Thread, error)
+	PostThread(thread *core.Thread) (*core.Thread, error)
+	GetThreads() ([]core.Thread, error)
 	GetThreadIds() ([]uuid.UUID, error) // used if ?only_ids=true
-	ArchiveThread(id uuid.UUID) (*threads.Thread, error)
-	RestoreThread(id uuid.UUID) (*threads.Thread, error)
-	ActivateThread(id uuid.UUID) (*threads.Thread, error)
-	DeactivateThread(id uuid.UUID) (*threads.Thread, error)
-	DeleteThread(id uuid.UUID) (*threads.Thread, error)
+	ArchiveThread(id uuid.UUID) (*core.Thread, error)
+	RestoreThread(id uuid.UUID) (*core.Thread, error)
+	ActivateThread(id uuid.UUID) (*core.Thread, error)
+	DeactivateThread(id uuid.UUID) (*core.Thread, error)
+	DeleteThread(id uuid.UUID) (*core.Thread, error)
 }
 
 func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
@@ -56,7 +63,7 @@ func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
 }
 
 func (t *ThreadController) PostThreads(c *gin.Context) {
-	var thread threads.Thread
+	var thread core.Thread
 
 	// using c.BindJSON calls c.MustBindJSON which writes the response header as `text/plain` which can't be overriddens
 	err := c.ShouldBindJSON(&thread)
@@ -68,6 +75,7 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 	threadsResponse, err := t.ThreadService.PostThread(&thread)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("ThreadService.PostThread failed: %s", err)))
+		return
 	}
 
 	c.JSON(http.StatusOK, threadsResponse)

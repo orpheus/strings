@@ -3,8 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/orpheus/strings/pkg/repo/threads"
-	"time"
+	"github.com/orpheus/strings/pkg/core"
 )
 
 func NewThreadService(threadRepository ThreadRepository) *ThreadService {
@@ -18,11 +17,11 @@ type ThreadService struct {
 }
 
 type ThreadRepository interface {
-	FindByThreadId(threadId uuid.UUID) (*threads.Thread, error)
-	CreateThread(thread *threads.Thread) (*threads.Thread, error)
+	FindByThreadId(threadId uuid.UUID) (*core.Thread, error)
+	CreateThread(name string, id, threadId uuid.UUID) (*core.Thread, error)
 }
 
-func (t *ThreadService) PostThread(thread *threads.Thread) (*threads.Thread, error) {
+func (t *ThreadService) PostThread(thread *core.Thread) (*core.Thread, error) {
 	if thread.Id == (uuid.UUID{}) {
 		return t.createNewThread(thread)
 	}
@@ -39,26 +38,21 @@ func (t *ThreadService) PostThread(thread *threads.Thread) (*threads.Thread, err
 	return existingThread, nil
 }
 
-func CreateNewThread(name string) *threads.Thread {
-	return &threads.Thread{
-		Id:          uuid.New(),
-		Name:        name,
-		Version:     1,
-		ThreadId:    uuid.New(),
-		Archived:    false,
-		Deleted:     false,
-		DateCreated: time.Now(),
-		Strings:     nil,
-	}
-}
-
 // note: thread name+version combination should be unique
-func (t *ThreadService) createNewThread(thread *threads.Thread) (*threads.Thread, error) {
+func (t *ThreadService) createNewThread(thread *core.Thread) (*core.Thread, error) {
 	if thread.Name == "" {
 		return nil, fmt.Errorf("failed to create new thread, missing `name`")
 	}
 
-	newThread, err := t.ThreadRepository.CreateThread(CreateNewThread(thread.Name))
+	if thread.Id == (uuid.UUID{}) {
+		thread.Id = uuid.New()
+	}
+
+	if thread.ThreadId == (uuid.UUID{}) {
+		thread.ThreadId = uuid.New()
+	}
+
+	newThread, err := t.ThreadRepository.CreateThread(thread.Name, thread.Id, thread.ThreadId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new thread: %s\n", err)
 	}
@@ -66,7 +60,7 @@ func (t *ThreadService) createNewThread(thread *threads.Thread) (*threads.Thread
 	return newThread, nil
 }
 
-func (t *ThreadService) GetThreads() ([]threads.Thread, error) {
+func (t *ThreadService) GetThreads() ([]core.Thread, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -76,27 +70,27 @@ func (t *ThreadService) GetThreadIds() ([]uuid.UUID, error) {
 	panic("implement me")
 }
 
-func (t *ThreadService) ArchiveThread(id uuid.UUID) (*threads.Thread, error) {
+func (t *ThreadService) ArchiveThread(id uuid.UUID) (*core.Thread, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t *ThreadService) RestoreThread(id uuid.UUID) (*threads.Thread, error) {
+func (t *ThreadService) RestoreThread(id uuid.UUID) (*core.Thread, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t *ThreadService) ActivateThread(id uuid.UUID) (*threads.Thread, error) {
+func (t *ThreadService) ActivateThread(id uuid.UUID) (*core.Thread, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t *ThreadService) DeactivateThread(id uuid.UUID) (*threads.Thread, error) {
+func (t *ThreadService) DeactivateThread(id uuid.UUID) (*core.Thread, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t *ThreadService) DeleteThread(id uuid.UUID) (*threads.Thread, error) {
+func (t *ThreadService) DeleteThread(id uuid.UUID) (*core.Thread, error) {
 	//TODO implement me
 	panic("implement me")
 }
