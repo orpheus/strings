@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/google/uuid"
+	"reflect"
 	"time"
 )
 
@@ -16,4 +17,19 @@ type String struct {
 	Archived    bool      `json:"archived"`
 	Deleted     bool      `json:"deleted"`
 	DateCreated time.Time `json:"dateCreated"`
+}
+
+// Diff returns true if the string content does not match
+func (s *String) Diff(other *String) bool {
+	this := &String{
+		Name:  s.Name,
+		Order: s.Order,
+	}
+
+	that := &String{
+		Name:  other.Name,
+		Order: other.Order,
+	}
+
+	return !reflect.DeepEqual(this, that)
 }

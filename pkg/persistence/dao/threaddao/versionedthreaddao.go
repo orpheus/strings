@@ -1,6 +1,8 @@
 package threaddao
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/infra/sqldb"
@@ -22,7 +24,7 @@ type VersionedThreadDao struct {
 }
 
 func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThreadRecord, error) {
-	sql := `
+	query := `
 	insert into thread_versioned (
 		id, name, version, thread_id
 	) values ($1, $2, $3, $4) 
@@ -30,16 +32,33 @@ func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThre
 	`
 
 	ex := t.Store.GetExecutor()
-	row := ex.QueryRow(sql, record.Id, record.Name, record.Version, record.ThreadId)
-
-	if row.Err() != nil {
-		return nil, fmt.Errorf("failed to exec thread insert: %s\n", row.Err())
-	}
+	row := ex.QueryRow(query, record.Id, record.Name, record.Version, record.ThreadId)
 
 	var r VersionedThreadRecord
 	err := row.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan versioned thread record: %s\n", err)
+		return nil, fmt.Errorf("Scan err for versioned thread record: %s", err)
+	}
+
+	return &r, nil
+}
+
+func (t *VersionedThreadDao) FindByThreadId(threadId uuid.UUID) (*VersionedThreadRecord, error) {
+	query := `
+	select * from thread_versioned where thread_id = $1;
+	`
+
+	ex := t.Store.GetExecutor()
+	row := ex.QueryRow(query, threadId)
+
+	var r VersionedThreadRecord
+	if err := row.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("QueryRow err for versioned thread record: %s", err)
+		}
 	}
 
 	return &r, nil

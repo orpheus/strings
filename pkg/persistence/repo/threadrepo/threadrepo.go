@@ -22,6 +22,7 @@ type ThreadDao interface {
 
 type VersionedThreadDao interface {
 	Save(record *threaddao.VersionedThreadRecord) (*threaddao.VersionedThreadRecord, error)
+	FindByThreadId(threadId uuid.UUID) (*threaddao.VersionedThreadRecord, error)
 }
 
 func NewThreadRepository(threadDao ThreadDao, stringDao StringDao, versionedThreadDao VersionedThreadDao) *Repository {
@@ -33,12 +34,32 @@ func NewThreadRepository(threadDao ThreadDao, stringDao StringDao, versionedThre
 }
 
 func (r *Repository) FindByThreadId(threadId uuid.UUID) (*core.Thread, error) {
-	return nil, nil
+	versionedThread, err := r.VersionedThreadDao.FindByThreadId(threadId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find by ThreadId: %s", err)
+	}
+
+	if versionedThread == nil {
+		return nil, nil
+	}
+
+	// TODO("Get strings")
+
+	return &core.Thread{
+		Id:          versionedThread.Id,
+		Name:        versionedThread.Name,
+		Version:     versionedThread.Version,
+		ThreadId:    versionedThread.ThreadId,
+		Archived:    versionedThread.Archived,
+		Deleted:     versionedThread.Deleted,
+		DateCreated: versionedThread.DateCreated,
+		Strings:     nil,
+	}, nil
 }
 
 func (r *Repository) CreateThread(name string, id, threadId uuid.UUID) (*core.Thread, error) {
 	if threadId == (uuid.UUID{}) {
-		return nil, fmt.Errorf("missing ThreadId\n")
+		return nil, fmt.Errorf("missing ThreadId")
 	}
 
 	if id == (uuid.UUID{}) {

@@ -23,13 +23,13 @@ func (t *ThreadDao) Save(record *ThreadRecord) (*ThreadRecord, error) {
 	row := ex.QueryRow(sql, record.Id)
 
 	if row.Err() != nil {
-		return nil, fmt.Errorf("failed to exec thread insert: %s\n", row.Err())
+		return nil, fmt.Errorf("failed to exec thread insert: %s", row.Err())
 	}
 
 	var threadRecord ThreadRecord
 	err := row.Scan(&threadRecord.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan thread record: %s\n", err)
+		return nil, fmt.Errorf("failed to scan thread record: %s", err)
 	}
 
 	return &threadRecord, nil

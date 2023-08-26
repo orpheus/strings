@@ -28,7 +28,7 @@ func (t *ThreadService) PostThread(thread *core.Thread) (*core.Thread, error) {
 
 	existingThread, err := t.ThreadRepository.FindByThreadId(thread.ThreadId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find thread by threadId: %s\n", err)
+		return nil, fmt.Errorf("thread repository failed to find thread by ThreadId: %s", err)
 	}
 
 	if existingThread == nil {

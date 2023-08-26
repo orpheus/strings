@@ -8,7 +8,7 @@ import (
 
 func Construct(r *gin.Engine, store *sqldb.Store) {
 	v1Router := r.Group("/v1")
-	v1Router.GET("/v1/health", func(c *gin.Context) {
+	v1Router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, "v1 healthy")
 	})
 
