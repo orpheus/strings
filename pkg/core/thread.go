@@ -8,13 +8,17 @@ import (
 
 type Thread struct {
 	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`    //  binding:"required"`
-	Version     int       `json:"version"` //  binding:"required"`
+	Name        string    `json:"name" binding:"required"`
+	Version     int       `json:"version"`
 	ThreadId    uuid.UUID `json:"thread_id"`
 	Archived    bool      `json:"archived"`
 	Deleted     bool      `json:"deleted"`
 	DateCreated time.Time `json:"dateCreated"`
 	Strings     []*String `json:"strings"`
+}
+
+func (t *Thread) MutateSelfUpdateStrings(with *Thread) {
+
 }
 
 func (t *Thread) Diff(other *Thread) bool {

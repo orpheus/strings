@@ -25,7 +25,7 @@ type VersionedThreadDao struct {
 
 func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThreadRecord, error) {
 	query := `
-	insert into thread_versioned (
+	insert into versioned_thread (
 		id, name, version, thread_id
 	) values ($1, $2, $3, $4) 
 	returning id, name, version, thread_id, archived, deleted, date_created;
@@ -44,8 +44,17 @@ func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThre
 }
 
 func (t *VersionedThreadDao) FindByThreadId(threadId uuid.UUID) (*VersionedThreadRecord, error) {
+	// query to grab the latest version of the versioned thread
+	// 1. create a sub-query to grab only the latest versions of the records
+	// 2. then join the records to get all the fields back
 	query := `
-	select * from thread_versioned where thread_id = $1;
+	select tr.* from versioned_thread tr
+	join (
+		select thread_id, max(version) as maxVersion
+		from versioned_thread
+		group by thread_id
+	) latest on tr.thread_id = latest.thread_id and tr.version = latest.maxVersion
+	where tr.thread_id = $1;
 	`
 
 	ex := t.Store.GetExecutor()

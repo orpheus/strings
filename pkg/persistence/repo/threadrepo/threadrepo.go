@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/core"
 	"github.com/orpheus/strings/pkg/persistence/dao/threaddao"
+	"time"
 )
 
 type Repository struct {
@@ -96,4 +97,42 @@ func (r *Repository) CreateThread(name string, id, threadId uuid.UUID) (*core.Th
 	}
 
 	return thread, nil
+}
+
+func (r *Repository) UpdateThread(clientThread *core.Thread) (*core.Thread, error) {
+	serverThread, err := r.FindByThreadId(clientThread.ThreadId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find by ThreadId via repo: %s", err)
+	}
+	if serverThread == nil {
+		return nil, fmt.Errorf("cannot update thread, thread not found for id %s", clientThread.Id)
+	}
+
+	newVersionedThread, err := r.VersionedThreadDao.Save(&threaddao.VersionedThreadRecord{
+		Id:          uuid.New(),
+		Name:        clientThread.Name,
+		Version:     serverThread.Version + 1,
+		ThreadId:    serverThread.ThreadId,
+		Archived:    serverThread.Archived,
+		Deleted:     serverThread.Deleted,
+		DateCreated: time.Now(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new version of thread: %s", err)
+	}
+
+	// TODO: Update strings
+	serverThread.MutateSelfUpdateStrings(clientThread)
+
+	return &core.Thread{
+		Id:          newVersionedThread.Id,
+		Name:        newVersionedThread.Name,
+		Version:     newVersionedThread.Version,
+		ThreadId:    newVersionedThread.ThreadId,
+		Archived:    newVersionedThread.Archived,
+		Deleted:     newVersionedThread.Deleted,
+		DateCreated: newVersionedThread.DateCreated,
+		Strings:     nil,
+	}, nil
+
 }
