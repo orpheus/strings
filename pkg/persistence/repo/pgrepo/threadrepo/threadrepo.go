@@ -40,7 +40,7 @@ func (r *Repository) FindAll() ([]*core.Thread, error) {
 		return nil, fmt.Errorf("failed to find threads from versioned_thread table: %s", err)
 	}
 
-	// TODO("Get strings")
+	// should the Thread Repository also fetch strings? or should that be done outside of this scope?
 
 	return convertVersionedThreadsToCoreThreads(versionedThreads), nil
 }
@@ -143,7 +143,8 @@ func convertVersionedThreadsToCoreThreads(versionedThreads []*threaddao.Versione
 	var threads []*core.Thread
 
 	for _, t := range versionedThreads {
-		threads = append(threads, t.ToThread(nil)) // TODO: Need strings
+		// TODO: Need strings? right now the ThreadService manages getting and setting the strings
+		threads = append(threads, t.ToThread(nil))
 	}
 
 	return threads
