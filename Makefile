@@ -1,0 +1,31 @@
+.PHONY: help build start printos
+
+timestamp := $(shell date +'%Y_%m_%d_%H_%M_%S')
+
+help: ## : Show this help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_%-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' ${MAKEFILE_LIST}
+
+build: ## : Build dependencies
+	go mod tidy
+	GOOS=darwin GOARCH=amd64 go build -o build/strings cmd/strings/main.go
+	#rm -f "${GOPATH}/bin/strings" && cp build/strings "${GOPATH}/bin"
+
+start: build ## : Start the client
+	DB_USER=postgres \
+    DB_PASS= \
+    DB_NAME=stringsv2 \
+    DB_HOST=localhost \
+    DB_PORT=5432 \
+    ./build/strings
+#    ${GOPATH}/bin/strings
+
+run: ## : Run app without build
+	DB_USER=postgres \
+	DB_PASS= \
+	DB_NAME=stringsv2 \
+	DB_HOST=localhost \
+	DB_PORT=5432 \
+	./build/strings
+
+dump: ## : dump postgres database
+	/usr/local/bin/pg_dump --dbname=strings --file="${HOME}/strings_localhost-$(timestamp)-dump.sql" --username=postgres --host=localhost --port=5432

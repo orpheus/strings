@@ -52,3 +52,7 @@ go run main.go
 ```
 
 Service will be listening on port `8080`
+
+### Resources
+
+- [Creating initial postgres user after homebrew install](https://stackoverflow.com/questions/15301826/psql-fatal-role-postgres-does-not-exist)
