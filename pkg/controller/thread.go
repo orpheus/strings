@@ -87,6 +87,17 @@ func (t *ThreadController) GetThreads(c *gin.Context) {
 		return
 	}
 
+	// TODO: optimize by having its own sql query
+	onlyIds := c.Query("only_ids")
+	if onlyIds == "true" {
+		var ids []uuid.UUID
+		for _, thread := range threads {
+			ids = append(ids, thread.ThreadId)
+		}
+		c.JSON(http.StatusOK, ids)
+		return
+	}
+
 	c.JSON(http.StatusOK, threads)
 }
 

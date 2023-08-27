@@ -293,7 +293,21 @@ func (t *ThreadService) updateAndCreateStrings(clientThread, serverThread *core.
 }
 
 func (t *ThreadService) GetThreads() ([]*core.Thread, error) {
-	return t.ThreadRepository.FindAll()
+	threads, err := t.ThreadRepository.FindAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get threads: %s", err)
+	}
+
+	// TODO: have ThreadRepository return threads with strings
+	for _, thread := range threads {
+		strings, err := t.StringRepository.FindAllByThreadId(thread.ThreadId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get strings for thread %s: %s", thread.ThreadId, err)
+		}
+		thread.Strings = strings
+	}
+
+	return threads, nil
 }
 
 func (t *ThreadService) GetThreadIds() ([]uuid.UUID, error) {
