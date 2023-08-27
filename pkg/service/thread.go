@@ -298,6 +298,7 @@ func (t *ThreadService) GetThreads() ([]*core.Thread, error) {
 		return nil, fmt.Errorf("failed to get threads: %s", err)
 	}
 
+	// TODO: have ThreadRepository return threads with strings
 	for _, thread := range threads {
 		strings, err := t.StringRepository.FindAllByThreadId(thread.ThreadId)
 		if err != nil {

@@ -40,7 +40,7 @@ func (r *Repository) FindAll() ([]*core.Thread, error) {
 		return nil, fmt.Errorf("failed to find threads from versioned_thread table: %s", err)
 	}
 
-	// should the Thread Repository also fetch strings? or should that be done outside of this scope?
+	// TODO: fetch strings and remove string resolution from service layer
 
 	return convertVersionedThreadsToCoreThreads(versionedThreads), nil
 }
