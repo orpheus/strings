@@ -22,8 +22,7 @@ create table if not exists versioned_thread
     date_created timestamp with time zone not null default current_timestamp,
 
     constraint fk_versioned_thread_thread_id foreign key (thread_id) references thread (id),
-    constraint unique_versioned_thread_thread_id_version unique (thread_id, version),
-    constraint unique_versioned_thread_thread_id_name unique (thread_id, name)
+    constraint unique_versioned_thread_thread_id_version unique (thread_id, version)
 );
 
 create table if not exists versioned_string
@@ -34,7 +33,7 @@ create table if not exists versioned_string
     string_id    uuid                     not null,
     thread_id    uuid                     not null,
     "order"      int                      not null,
-    active       bool,
+    active       bool                     not null default false,
     archived     bool                     not null default false,
     deleted      bool                     not null default false,
     date_created timestamp with time zone not null default current_timestamp,

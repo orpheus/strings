@@ -22,6 +22,7 @@ type StringDao interface {
 type VersionedStringDao interface {
 	Save(record *stringdao.VersionedStringRecord) (*stringdao.VersionedStringRecord, error)
 	FindByStringId(stringId uuid.UUID) (*stringdao.VersionedStringRecord, error)
+	FindAllByThreadId(threadId uuid.UUID) ([]*stringdao.VersionedStringRecord, error)
 }
 
 type StringRepository struct {
@@ -35,7 +36,7 @@ func (s *StringRepository) CreateNewString(string *core.String) (*core.String, e
 		return nil, fmt.Errorf("failed to create new string, missing `string`")
 	}
 
-	if string.StringId == (uuid.UUID{}) {
+	if string.StringId == uuid.Nil {
 		string.StringId = uuid.New()
 	}
 
@@ -79,16 +80,20 @@ func (s *StringRepository) CreateNewString(string *core.String) (*core.String, e
 // CreateNewStringVersion creates a new versioned string record.
 func (s *StringRepository) CreateNewStringVersion(string *core.String) (*core.String, error) {
 	if string == nil {
-		return nil, fmt.Errorf("failed to create new versioned string, missing `string`")
+		return nil, fmt.Errorf("string is nil")
 	}
 
-	if string.StringId == (uuid.UUID{}) {
-		return nil, fmt.Errorf("failed to create new versioned string, missing `string.StringId`")
+	if string.ThreadId == uuid.Nil {
+		return nil, fmt.Errorf("missing thread id`")
+	}
+
+	if string.StringId == uuid.Nil {
+		return nil, fmt.Errorf("missing string id")
 	}
 
 	serverString, err := s.VersionedStringDao.FindByStringId(string.StringId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find by StringId via repo: %s", err)
+		return nil, fmt.Errorf("failed to find string by string id: %s", err)
 	}
 
 	if serverString == nil {
@@ -112,4 +117,23 @@ func (s *StringRepository) CreateNewStringVersion(string *core.String) (*core.St
 	}
 
 	return newVersionedStringRecord.ToString(), nil
+}
+
+func (s *StringRepository) FindAllByThreadId(threadId uuid.UUID) ([]*core.String, error) {
+	versionedStrings, err := s.VersionedStringDao.FindAllByThreadId(threadId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find strings by thread id: %s", err)
+	}
+
+	return convertVersionedStringsToCoreStrings(versionedStrings), nil
+}
+
+func convertVersionedStringsToCoreStrings(versionedStrings []*stringdao.VersionedStringRecord) []*core.String {
+	coreStrings := make([]*core.String, len(versionedStrings))
+
+	for i, versionedString := range versionedStrings {
+		coreStrings[i] = versionedString.ToString()
+	}
+
+	return coreStrings
 }

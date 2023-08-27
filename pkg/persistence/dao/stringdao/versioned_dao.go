@@ -16,10 +16,18 @@ type VersionedStringDao struct {
 // Do not let the caller set active, archived, or deleted. These fields are handled by the service layer.
 // Let date_created be set by the database.
 func (v *VersionedStringDao) Save(record *VersionedStringRecord) (*VersionedStringRecord, error) {
+	if record.ThreadId == uuid.Nil {
+		return nil, errors.New("thread id cannot be nil")
+	}
+
+	if record.StringId == uuid.Nil {
+		return nil, errors.New("string id cannot be nil")
+	}
+
 	query := `
 	insert into versioned_string (
 		id, name, version, string_id, thread_id, "order"
-	) values ($1, $2, $3, $4) 
+	) values ($1, $2, $3, $4, $5, $6) 
 	returning id, name, version, string_id, thread_id, "order", active, archived, deleted, date_created;
 	`
 
@@ -29,7 +37,7 @@ func (v *VersionedStringDao) Save(record *VersionedStringRecord) (*VersionedStri
 	var r VersionedStringRecord
 	err := row.Scan(&r.Id, &r.Name, &r.Version, &r.StringId, &r.ThreadId, &r.Order, &r.Active, &r.Archived, &r.Deleted, &r.DateCreated)
 	if err != nil {
-		return nil, fmt.Errorf("scan err for versioned string record: %s", err)
+		return nil, fmt.Errorf("scan err: %s", err)
 	}
 
 	return &r, nil
@@ -59,4 +67,42 @@ func (v *VersionedStringDao) FindByStringId(stringId uuid.UUID) (*VersionedStrin
 	}
 
 	return &r, nil
+}
+
+func (v *VersionedStringDao) FindAllByThreadId(threadId uuid.UUID) ([]*VersionedStringRecord, error) {
+	if threadId == uuid.Nil {
+		return nil, errors.New("thread id nil")
+	}
+
+	query := `
+	select str.* from versioned_string str
+	join (
+		select string_id, max(version) as maxVersion
+		from versioned_string
+		group by string_id
+	) latest on str.string_id = latest.string_id and str.version = latest.maxVersion
+	where str.thread_id = $1;
+	`
+
+	ex := v.Store.GetExecutor()
+	rows, err := ex.Query(query, threadId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %s", err)
+	}
+
+	var records []*VersionedStringRecord
+	for rows.Next() {
+		var r VersionedStringRecord
+		if err := rows.Scan(&r.Id, &r.Name, &r.Version, &r.StringId, &r.ThreadId, &r.Order, &r.Active, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
+			return nil, fmt.Errorf("failed to scan record: %s", err)
+		}
+
+		records = append(records, &r)
+	}
+
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("rows err: %s", rows.Err())
+	}
+
+	return records, nil
 }

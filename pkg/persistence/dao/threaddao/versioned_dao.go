@@ -16,6 +16,10 @@ type VersionedThreadDao struct {
 // Do not let the caller set archived, or deleted. These fields are handled by the service layer.
 // Let date_created be set by the database.
 func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThreadRecord, error) {
+	if record.ThreadId == uuid.Nil {
+		return nil, errors.New("thread id cannot be nil")
+	}
+
 	query := `
 	insert into versioned_thread (
 		id, name, version, thread_id
@@ -29,7 +33,7 @@ func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThre
 	var r VersionedThreadRecord
 	err := row.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated)
 	if err != nil {
-		return nil, fmt.Errorf("Scan err for versioned thread record: %s", err)
+		return nil, fmt.Errorf("scan err for versioned thread record: %s", err)
 	}
 
 	return &r, nil
@@ -58,7 +62,7 @@ func (t *VersionedThreadDao) FindByThreadId(threadId uuid.UUID) (*VersionedThrea
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to scan record: %s", err)
+		return nil, fmt.Errorf("scan err: %s", err)
 	}
 
 	return &r, nil
@@ -85,7 +89,7 @@ func (t *VersionedThreadDao) FindAll() ([]*VersionedThreadRecord, error) {
 	for rows.Next() {
 		var r VersionedThreadRecord
 		if err := rows.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
-			return nil, fmt.Errorf("failed to scan record: %s", err)
+			return nil, fmt.Errorf("scan err: %s", err)
 		}
 		records = append(records, &r)
 	}

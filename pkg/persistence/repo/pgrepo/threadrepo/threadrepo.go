@@ -55,7 +55,7 @@ func (r *Repository) FindByThreadId(threadId uuid.UUID) (*core.Thread, error) {
 		return nil, nil
 	}
 
-	// TODO("Get strings")
+	// do not get strings here, that is a separate call
 
 	return &core.Thread{
 		Id:          versionedThread.Id,
@@ -69,23 +69,27 @@ func (r *Repository) FindByThreadId(threadId uuid.UUID) (*core.Thread, error) {
 	}, nil
 }
 
-func (r *Repository) CreateThread(name string, id, threadId uuid.UUID) (*core.Thread, error) {
-	if threadId == (uuid.UUID{}) {
-		return nil, fmt.Errorf("missing ThreadId")
+func (r *Repository) CreateNewThread(thread *core.Thread) (*core.Thread, error) {
+	if thread == nil {
+		return nil, fmt.Errorf("thread is nil")
 	}
 
-	if id == (uuid.UUID{}) {
-		return nil, fmt.Errorf("missing Id\n")
+	if thread.ThreadId == uuid.Nil {
+		thread.ThreadId = uuid.New()
 	}
 
-	threadRecord, err := r.ThreadDao.Save(&threaddao.ThreadRecord{Id: threadId})
+	if thread.Name == "" {
+		return nil, fmt.Errorf("missing `name`")
+	}
+
+	threadRecord, err := r.ThreadDao.Save(&threaddao.ThreadRecord{Id: thread.ThreadId})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create thread record: %s\n", err)
 	}
 
 	versionedThread := threaddao.VersionedThreadRecord{
-		Id:       id,
-		Name:     name,
+		Id:       uuid.New(),
+		Name:     thread.Name,
 		Version:  1,
 		ThreadId: threadRecord.Id,
 		// rest of the values will be defaulted by postgres
@@ -96,28 +100,40 @@ func (r *Repository) CreateThread(name string, id, threadId uuid.UUID) (*core.Th
 		return nil, fmt.Errorf("failed to create versioned thread record: %s\n", err)
 	}
 
-	thread := &core.Thread{
-		Id:          versionedThreadRecord.Id,
-		Name:        versionedThreadRecord.Name,
-		Version:     versionedThreadRecord.Version,
-		ThreadId:    versionedThreadRecord.ThreadId,
-		Archived:    versionedThreadRecord.Archived,
-		Deleted:     versionedThreadRecord.Deleted,
-		DateCreated: versionedThreadRecord.DateCreated,
-		Strings:     nil,
-	}
-
-	return thread, nil
+	return versionedThreadRecord.ToThread(thread.Strings), nil
 }
 
-// SaveNewThreadVersion updates an existing thread, does not care about or deal with any initial creation
+// CreateNewThreadVersion updates an existing thread, does not care about or deal with any initial creation
 // logic. That should be handled outside and separate from this function. Updates existing thread.
-func (r *Repository) SaveNewThreadVersion(thread *core.Thread) (*core.Thread, error) {
-	newVersionedThread := new(threaddao.VersionedThreadRecord).FromThread(thread)
+func (r *Repository) CreateNewThreadVersion(thread *core.Thread) (*core.Thread, error) {
+	if thread == nil {
+		return nil, fmt.Errorf("thread is nil")
+	}
 
-	savedVersionedThreadRecord, err := r.VersionedThreadDao.Save(newVersionedThread)
+	if thread.ThreadId == uuid.Nil {
+		return nil, fmt.Errorf("missing thread id")
+	}
+
+	serverThread, err := r.FindByThreadId(thread.ThreadId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new version of thread: %s", err)
+		return nil, fmt.Errorf("err during thread lookup: %s", err)
+	}
+
+	if serverThread == nil {
+		return nil, fmt.Errorf("thread not found %s", thread.Id)
+	}
+
+	savedVersionedThreadRecord, err := r.VersionedThreadDao.Save(&threaddao.VersionedThreadRecord{
+		Id:          uuid.New(),
+		Name:        thread.Name,
+		Version:     serverThread.Version + 1,
+		ThreadId:    serverThread.ThreadId,
+		Archived:    serverThread.Archived,
+		Deleted:     serverThread.Deleted,
+		DateCreated: serverThread.DateCreated,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new thread version: %s", err)
 	}
 
 	return savedVersionedThreadRecord.ToThread(thread.Strings), nil

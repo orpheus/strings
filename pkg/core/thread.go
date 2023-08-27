@@ -36,7 +36,10 @@ func (t *Thread) ValidateSelf() error {
 }
 
 func (t *Thread) Diff(other *Thread) bool {
-	return t.DiffThreadOnly(other) || t.DiffStringsOnly(other)
+	threadDif := t.DiffThreadOnly(other)
+	stringsDif := t.DiffStringsOnly(other)
+
+	return threadDif || stringsDif
 }
 
 // DiffThreadOnly returns true if there is a diff between thread-specific content.
@@ -56,16 +59,16 @@ func (t *Thread) DiffThreadOnly(other *Thread) bool {
 }
 
 // DiffStringsOnly returns true if there is a diff between string content.
-func (t *Thread) DiffStringsOnly(other *Thread) bool {
-	that := make(map[uuid.UUID]*String)
+func (t *Thread) DiffStringsOnly(otherThread *Thread) bool {
+	otherThreadMap := make(map[uuid.UUID]*String)
 
-	for _, str := range other.Strings {
-		that[str.Id] = str
+	for _, str := range otherThread.Strings {
+		otherThreadMap[str.StringId] = str
 	}
 
-	for _, str := range t.Strings {
-		if otherStr, exists := that[str.Id]; exists {
-			if str.Diff(otherStr) {
+	for _, thisString := range t.Strings {
+		if otherString, exists := otherThreadMap[thisString.StringId]; exists {
+			if thisString.Diff(otherString) {
 				// return true if string in this thread is different than string in other thread
 				return true
 			}

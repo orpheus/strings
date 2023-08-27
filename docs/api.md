@@ -60,20 +60,16 @@ String
       1. if `stringId` not found, a new versioned string will be created for that thread
    3. `id` is ignored
 5. Creating/Updating multiple strings
-   1. required: thread_id
-   2. required: []strings
-<!--       1. if strings empty, do nothing -->
-      1. grab all strings associated with `thread_id`
-      2. 
-      2. for each client string
-         1. if exists in db,
-            1. check diff
-               1. update
-         2. if not exists in db,
-            1. create it
-      3. then,
-         1. run validationss
-         2.
+   1. required: `thread_id` uuid
+   2. required: `strings` []string
+      1. grab server thread with server strings
+      2. update server strings from client strings (client-update fields only)
+      3. determine/validate order between existing strings and new strings after existing strings have been updated
+         1. server always assumes client provided Perfect Order. server will not ever try to order strings for you.
+      4. set `order` on new strings without `order` to last in range
+      5. create new versions for updated strings
+      6. create new string records for new strings
+      7. return and bump thread version
 
 #### Cases
 
