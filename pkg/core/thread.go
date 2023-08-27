@@ -9,7 +9,7 @@ import (
 
 type Thread struct {
 	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name" binding:"required"`
+	Name        string    `json:"name"`
 	Version     int       `json:"version"`
 	ThreadId    uuid.UUID `json:"thread_id"`
 	Archived    bool      `json:"archived"`

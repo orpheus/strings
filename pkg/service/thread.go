@@ -95,6 +95,11 @@ func (t *ThreadService) createNewThread(thread *core.Thread) (*core.Thread, erro
 }
 
 func (t *ThreadService) updateThreadIfNeeded(clientThread *core.Thread, serverThread *core.Thread) (*core.Thread, error) {
+	// if client did not provide name, just use the server name. client cannot set empty name
+	if clientThread.Name == "" {
+		clientThread.Name = serverThread.Name
+	}
+
 	if !clientThread.Diff(serverThread) {
 		return serverThread, nil
 	}
