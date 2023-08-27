@@ -20,6 +20,7 @@ type ThreadRepository interface {
 	FindByThreadId(threadId uuid.UUID) (*core.Thread, error)
 	CreateThread(name string, id, threadId uuid.UUID) (*core.Thread, error)
 	UpdateThread(clientThread *core.Thread) (*core.Thread, error)
+	FindAll() ([]*core.Thread, error)
 }
 
 func (t *ThreadService) PostThread(thread *core.Thread) (*core.Thread, error) {
@@ -68,9 +69,8 @@ func (t *ThreadService) updateThreadIfNeeded(clientThread *core.Thread, serverTh
 	return serverThread, nil
 }
 
-func (t *ThreadService) GetThreads() ([]core.Thread, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThreadService) GetThreads() ([]*core.Thread, error) {
+	return t.ThreadRepository.FindAll()
 }
 
 func (t *ThreadService) GetThreadIds() ([]uuid.UUID, error) {

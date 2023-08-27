@@ -24,6 +24,7 @@ type ThreadDao interface {
 type VersionedThreadDao interface {
 	Save(record *threaddao.VersionedThreadRecord) (*threaddao.VersionedThreadRecord, error)
 	FindByThreadId(threadId uuid.UUID) (*threaddao.VersionedThreadRecord, error)
+	FindAll() ([]*threaddao.VersionedThreadRecord, error)
 }
 
 func NewThreadRepository(threadDao ThreadDao, stringDao StringDao, versionedThreadDao VersionedThreadDao) *Repository {
@@ -134,5 +135,36 @@ func (r *Repository) UpdateThread(clientThread *core.Thread) (*core.Thread, erro
 		DateCreated: newVersionedThread.DateCreated,
 		Strings:     nil,
 	}, nil
+}
 
+func (r *Repository) FindAll() ([]*core.Thread, error) {
+	versionedThreads, err := r.VersionedThreadDao.FindAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find threads from versioned_thread table: %s", err)
+	}
+
+	return convertVersionedThreadsToCoreThreads(versionedThreads), nil
+}
+
+func convertVersionedThreadToCoreThread(versionedThread *threaddao.VersionedThreadRecord) *core.Thread {
+	return &core.Thread{
+		Id:          versionedThread.Id,
+		Name:        versionedThread.Name,
+		Version:     versionedThread.Version,
+		ThreadId:    versionedThread.ThreadId,
+		Archived:    versionedThread.Archived,
+		Deleted:     versionedThread.Deleted,
+		DateCreated: versionedThread.DateCreated,
+		Strings:     nil, // TODO
+	}
+}
+
+func convertVersionedThreadsToCoreThreads(versionedThreads []*threaddao.VersionedThreadRecord) []*core.Thread {
+	var threads []*core.Thread
+
+	for _, t := range versionedThreads {
+		threads = append(threads, convertVersionedThreadToCoreThread(t))
+	}
+
+	return threads
 }

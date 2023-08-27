@@ -62,13 +62,44 @@ func (t *VersionedThreadDao) FindByThreadId(threadId uuid.UUID) (*VersionedThrea
 
 	var r VersionedThreadRecord
 	if err := row.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, nil
-			}
-			return nil, fmt.Errorf("QueryRow err for versioned thread record: %s", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
 		}
+		return nil, fmt.Errorf("failed to sscan record: %s", err)
 	}
 
 	return &r, nil
+}
+
+func (t *VersionedThreadDao) FindAll() ([]*VersionedThreadRecord, error) {
+	query := `
+	select tr.* from versioned_thread tr
+	join (
+		select thread_id, max(version) as maxVersion
+		from versioned_thread
+		group by thread_id
+	) latest on tr.thread_id = latest.thread_id and tr.version = latest.maxVersion
+	`
+
+	ex := t.Store.GetExecutor()
+	rows, err := ex.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed query table: %s", err)
+	}
+	defer rows.Close()
+
+	var records []*VersionedThreadRecord
+	for rows.Next() {
+		var r VersionedThreadRecord
+		if err := rows.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
+			return nil, fmt.Errorf("failed to scan record: %s", err)
+		}
+		records = append(records, &r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("err while iterating over rows: %s", err)
+	}
+
+	return records, nil
 }

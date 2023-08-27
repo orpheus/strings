@@ -35,7 +35,7 @@ type ThreadController struct {
 
 type ThreadService interface {
 	PostThread(thread *core.Thread) (*core.Thread, error)
-	GetThreads() ([]core.Thread, error)
+	GetThreads() ([]*core.Thread, error)
 	GetThreadIds() ([]uuid.UUID, error) // used if ?only_ids=true
 	ArchiveThread(id uuid.UUID) (*core.Thread, error)
 	RestoreThread(id uuid.UUID) (*core.Thread, error)
@@ -82,7 +82,13 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 }
 
 func (t *ThreadController) GetThreads(c *gin.Context) {
+	threads, err := t.ThreadService.GetThreads()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("ThreadService.GetThreads failed: %s", err)))
+		return
+	}
 
+	c.JSON(http.StatusOK, threads)
 }
 
 func (t *ThreadController) Archive(c *gin.Context) {
