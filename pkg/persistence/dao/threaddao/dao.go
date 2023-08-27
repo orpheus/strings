@@ -2,13 +2,8 @@ package threaddao
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/infra/sqldb"
 )
-
-type ThreadRecord struct {
-	Id uuid.UUID
-}
 
 type ThreadDao struct {
 	*sqldb.Store

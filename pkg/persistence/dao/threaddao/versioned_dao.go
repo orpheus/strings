@@ -12,6 +12,9 @@ type VersionedThreadDao struct {
 	*sqldb.Store
 }
 
+// Save saves a new versioned thread record.
+// Do not let the caller set archived, or deleted. These fields are handled by the service layer.
+// Let date_created be set by the database.
 func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThreadRecord, error) {
 	query := `
 	insert into versioned_thread (
@@ -32,6 +35,7 @@ func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThre
 	return &r, nil
 }
 
+// FindByThreadId finds the latest version of a thread by thread id. Returns nil if no record is found.
 func (t *VersionedThreadDao) FindByThreadId(threadId uuid.UUID) (*VersionedThreadRecord, error) {
 	// query to grab the latest version of the versioned thread
 	// 1. create a sub-query to grab only the latest versions of the records
@@ -54,7 +58,7 @@ func (t *VersionedThreadDao) FindByThreadId(threadId uuid.UUID) (*VersionedThrea
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to sscan record: %s", err)
+		return nil, fmt.Errorf("failed to scan record: %s", err)
 	}
 
 	return &r, nil

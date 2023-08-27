@@ -27,8 +27,8 @@ type ThreadRepository interface {
 }
 
 type StringRepository interface {
-	CreateString(string *core.String) (*core.String, error)
-	UpdateString(string *core.String) (*core.String, error)
+	CreateNewString(string *core.String) (*core.String, error)
+	CreateNewStringVersion(string *core.String) (*core.String, error)
 }
 
 func (t *ThreadService) PostThread(thread *core.Thread) (*core.Thread, error) {
@@ -104,9 +104,10 @@ func (t *ThreadService) updateAndCreateStrings(clientThread, serverThread *core.
 		serverStringMap[serverString.StringId] = serverString
 	}
 
+	// map of strings that have been updated
 	updatedStrings := make(map[uuid.UUID]*core.String)
 
-	// Update-mutate existing strings and mark as updated
+	// Update-mutate existing strings and mark as updated only if they have changed
 
 	for _, clientString := range clientThread.Strings {
 		if _, exists := serverStringMap[clientString.StringId]; exists {
@@ -178,25 +179,25 @@ func (t *ThreadService) updateAndCreateStrings(clientThread, serverThread *core.
 	}
 
 	// Loop through ordered string and update existing strings and create new strings
-	var returnedServerStrings []*core.String
+	var updatedServerStrings []*core.String
 
 	for _, s := range orderedStrings {
 		if _, exists := updatedStrings[s.StringId]; exists {
-			updatedString, err := t.StringRepository.UpdateString(s)
+			updatedString, err := t.StringRepository.CreateNewStringVersion(s)
 			if err != nil {
 				return nil, fmt.Errorf("failed to update string: %s", err)
 			}
-			returnedServerStrings = append(returnedServerStrings, updatedString)
+			updatedServerStrings = append(updatedServerStrings, updatedString)
 		} else {
-			updatedString, err := t.StringRepository.CreateString(s)
+			updatedString, err := t.StringRepository.CreateNewString(s)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create string: %s", err)
 			}
-			returnedServerStrings = append(returnedServerStrings, updatedString)
+			updatedServerStrings = append(updatedServerStrings, updatedString)
 		}
 	}
 
-	return returnedServerStrings, nil
+	return updatedServerStrings, nil
 }
 
 func (t *ThreadService) GetThreads() ([]*core.Thread, error) {
