@@ -8,8 +8,8 @@ import (
 
 type String struct {
 	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`    //  binding:"required"`
-	Version     int       `json:"version"` //  binding:"required"`
+	Name        string    `json:"name" binding:"required"`
+	Version     int       `json:"version"`
 	StringId    uuid.UUID `json:"string_id"`
 	ThreadId    uuid.UUID `json:"thread_id"`
 	Order       int       `json:"order"`
@@ -17,6 +17,11 @@ type String struct {
 	Archived    bool      `json:"archived"`
 	Deleted     bool      `json:"deleted"`
 	DateCreated time.Time `json:"dateCreated"`
+}
+
+func (s *String) UpdateFromClient(clientString *String) {
+	s.Name = clientString.Name
+	s.Order = clientString.Order
 }
 
 // Diff returns true if the string content does not match

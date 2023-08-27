@@ -6,18 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/infra/sqldb"
-	"time"
 )
-
-type VersionedThreadRecord struct {
-	Id          uuid.UUID
-	Name        string
-	Version     int
-	ThreadId    uuid.UUID
-	Archived    bool
-	Deleted     bool
-	DateCreated time.Time
-}
 
 type VersionedThreadDao struct {
 	*sqldb.Store

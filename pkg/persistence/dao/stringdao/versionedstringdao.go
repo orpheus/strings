@@ -21,3 +21,8 @@ type VersionedStringRecord struct {
 type VersionedStringDao struct {
 	*sqldb.Store
 }
+
+func (v VersionedStringDao) Save(record *VersionedStringRecord) (*VersionedStringRecord, error) {
+	//TODO implement me
+	panic("implement me")
+}

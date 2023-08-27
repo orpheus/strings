@@ -4,23 +4,31 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/core"
+	"sort"
 )
 
-func NewThreadService(threadRepository ThreadRepository) *ThreadService {
+func NewThreadService(threadRepository ThreadRepository, stringRepository StringRepository) *ThreadService {
 	return &ThreadService{
 		ThreadRepository: threadRepository,
+		StringRepository: stringRepository,
 	}
 }
 
 type ThreadService struct {
 	ThreadRepository ThreadRepository
+	StringRepository StringRepository
 }
 
 type ThreadRepository interface {
 	FindByThreadId(threadId uuid.UUID) (*core.Thread, error)
 	CreateThread(name string, id, threadId uuid.UUID) (*core.Thread, error)
-	UpdateThread(clientThread *core.Thread) (*core.Thread, error)
+	SaveNewThreadVersion(thread *core.Thread) (*core.Thread, error)
 	FindAll() ([]*core.Thread, error)
+}
+
+type StringRepository interface {
+	CreateString(string *core.String) (*core.String, error)
+	UpdateString(string *core.String) (*core.String, error)
 }
 
 func (t *ThreadService) PostThread(thread *core.Thread) (*core.Thread, error) {
@@ -62,11 +70,133 @@ func (t *ThreadService) createNewThread(thread *core.Thread) (*core.Thread, erro
 }
 
 func (t *ThreadService) updateThreadIfNeeded(clientThread *core.Thread, serverThread *core.Thread) (*core.Thread, error) {
-	if clientThread.Diff(serverThread) {
-		return t.ThreadRepository.UpdateThread(clientThread)
+	if !clientThread.Diff(serverThread) {
+		return serverThread, nil
 	}
 
-	return serverThread, nil
+	if serverThread == nil {
+		return nil, fmt.Errorf("cannot update thread, thread not found %s", clientThread.Id)
+	}
+
+	serverThread.UpdateFromClientIgnoreStrings(clientThread)
+
+	if err := serverThread.ValidateSelf(); err != nil {
+		return nil, fmt.Errorf("thread failed validation, %s", err)
+	}
+
+	serverStrings, err := t.updateAndCreateStrings(clientThread, serverThread)
+	if err != nil {
+		return nil, fmt.Errorf("error updating strings: %s", err)
+	}
+
+	// Thread Update! ID and Bump
+	serverThread.Id = uuid.New()
+	serverThread.Version += 1
+	serverThread.Strings = serverStrings
+
+	return t.ThreadRepository.SaveNewThreadVersion(serverThread)
+}
+
+func (t *ThreadService) updateAndCreateStrings(clientThread, serverThread *core.Thread) ([]*core.String, error) {
+	serverStringMap := make(map[uuid.UUID]*core.String)
+
+	for _, serverString := range serverThread.Strings {
+		serverStringMap[serverString.StringId] = serverString
+	}
+
+	updatedStrings := make(map[uuid.UUID]*core.String)
+
+	// Update-mutate existing strings and mark as updated
+
+	for _, clientString := range clientThread.Strings {
+		if _, exists := serverStringMap[clientString.StringId]; exists {
+			serverString := serverStringMap[clientString.StringId]
+
+			if serverString.Diff(clientString) {
+				serverString.UpdateFromClient(clientString)
+				updatedStrings[serverString.StringId] = serverString
+			}
+		}
+	}
+
+	newStrings := make(map[uuid.UUID]*core.String)
+
+	// Get new strings
+
+	for _, clientString := range clientThread.Strings {
+		if _, exists := serverStringMap[clientString.StringId]; !exists {
+			newStrings[clientString.StringId] = clientString
+		}
+	}
+
+	// Order and validate order
+
+	maxRange := len(serverStringMap) + len(newStrings)
+
+	var orderedStrings []*core.String
+	var newUnorderedStrings []*core.String
+
+	for _, serverString := range serverStringMap {
+		if serverString.Order > maxRange {
+			return nil, fmt.Errorf("string (%s) order is greater than max range %d", serverString.StringId, maxRange)
+		}
+		orderedStrings = append(orderedStrings, serverString)
+	}
+
+	for _, newString := range newStrings {
+		if newString.Order != 0 {
+			if newString.Order > maxRange {
+				return nil, fmt.Errorf("string (%s) order is greater than max range %d", newString.StringId, maxRange)
+			}
+			orderedStrings = append(orderedStrings, newString)
+		} else {
+			newUnorderedStrings = append(newUnorderedStrings, newString)
+		}
+	}
+
+	// Sort ordered strings by order
+
+	sort.Slice(orderedStrings, func(i, j int) bool {
+		return orderedStrings[i].Order < orderedStrings[j].Order
+	})
+
+	// Validate that the known order supplied is sequential
+
+	for index, stringItem := range orderedStrings {
+		if stringItem.Order != index+1 {
+			return nil, fmt.Errorf("invalid string order")
+		}
+	}
+
+	// Assign order to new strings and add them to ordered strings
+	//
+	//	 order = maxRange + index 1-based
+	//		i.e. maxRange = 15, new items are 16, 17, 18, etc
+	for index, newString := range newUnorderedStrings {
+		newString.Order = maxRange + index + 1
+		orderedStrings = append(orderedStrings, newString)
+	}
+
+	// Loop through ordered string and update existing strings and create new strings
+	var returnedServerStrings []*core.String
+
+	for _, s := range orderedStrings {
+		if _, exists := updatedStrings[s.StringId]; exists {
+			updatedString, err := t.StringRepository.UpdateString(s)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update string: %s", err)
+			}
+			returnedServerStrings = append(returnedServerStrings, updatedString)
+		} else {
+			updatedString, err := t.StringRepository.CreateString(s)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create string: %s", err)
+			}
+			returnedServerStrings = append(returnedServerStrings, updatedString)
+		}
+	}
+
+	return returnedServerStrings, nil
 }
 
 func (t *ThreadService) GetThreads() ([]*core.Thread, error) {

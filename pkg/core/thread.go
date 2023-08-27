@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"reflect"
 	"time"
@@ -17,8 +18,21 @@ type Thread struct {
 	Strings     []*String `json:"strings"`
 }
 
-func (t *Thread) MutateSelfUpdateStrings(with *Thread) {
+// UpdateFromClientIgnoreStrings updates the thread with the values from the clientThread.
+// Does not update strings.
+func (t *Thread) UpdateFromClientIgnoreStrings(clientThread *Thread) {
+	t.Name = clientThread.Name
 
+	// handle strings separately because any new strings have to be created
+	// and any existing strings have to be updated
+}
+
+func (t *Thread) ValidateSelf() error {
+	if t.Name == "" {
+		return fmt.Errorf("missing `name`")
+	}
+
+	return nil
 }
 
 func (t *Thread) Diff(other *Thread) bool {

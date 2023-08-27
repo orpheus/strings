@@ -5,16 +5,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/core"
 	"github.com/orpheus/strings/pkg/persistence/dao/threaddao"
-	"time"
 )
 
 type Repository struct {
 	ThreadDao
-	StringDao
 	VersionedThreadDao
-}
-
-type StringDao interface {
 }
 
 type ThreadDao interface {
@@ -27,12 +22,27 @@ type VersionedThreadDao interface {
 	FindAll() ([]*threaddao.VersionedThreadRecord, error)
 }
 
-func NewThreadRepository(threadDao ThreadDao, stringDao StringDao, versionedThreadDao VersionedThreadDao) *Repository {
+// golang: build exactly what you need and put them together.
+// clojure: still the best language right now. any lisp is greater than a non-self-generating language.
+// lisp allows you to self generate key mechanisms and build data pipes. you build your own system in which you can program in.
+// any way you can think you can write something into the language itself and use it to further program your own program.
+
+func NewThreadRepository(threadDao ThreadDao, versionedThreadDao VersionedThreadDao) *Repository {
 	return &Repository{
 		ThreadDao:          threadDao,
-		StringDao:          stringDao,
 		VersionedThreadDao: versionedThreadDao,
 	}
+}
+
+func (r *Repository) FindAll() ([]*core.Thread, error) {
+	versionedThreads, err := r.VersionedThreadDao.FindAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find threads from versioned_thread table: %s", err)
+	}
+
+	// TODO("Get strings")
+
+	return convertVersionedThreadsToCoreThreads(versionedThreads), nil
 }
 
 func (r *Repository) FindByThreadId(threadId uuid.UUID) (*core.Thread, error) {
@@ -100,70 +110,24 @@ func (r *Repository) CreateThread(name string, id, threadId uuid.UUID) (*core.Th
 	return thread, nil
 }
 
-func (r *Repository) UpdateThread(clientThread *core.Thread) (*core.Thread, error) {
-	serverThread, err := r.FindByThreadId(clientThread.ThreadId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find by ThreadId via repo: %s", err)
-	}
-	if serverThread == nil {
-		return nil, fmt.Errorf("cannot update thread, thread not found for id %s", clientThread.Id)
-	}
+// SaveNewThreadVersion updates an existing thread, does not care about or deal with any initial creation
+// logic. That should be handled outside and separate from this function. Updates existing thread.
+func (r *Repository) SaveNewThreadVersion(thread *core.Thread) (*core.Thread, error) {
+	newVersionedThread := new(threaddao.VersionedThreadRecord).FromThread(thread)
 
-	newVersionedThread, err := r.VersionedThreadDao.Save(&threaddao.VersionedThreadRecord{
-		Id:          uuid.New(),
-		Name:        clientThread.Name,
-		Version:     serverThread.Version + 1,
-		ThreadId:    serverThread.ThreadId,
-		Archived:    serverThread.Archived,
-		Deleted:     serverThread.Deleted,
-		DateCreated: time.Now(),
-	})
+	savedVersionedThreadRecord, err := r.VersionedThreadDao.Save(newVersionedThread)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new version of thread: %s", err)
 	}
 
-	// TODO: Update strings
-	serverThread.MutateSelfUpdateStrings(clientThread)
-
-	return &core.Thread{
-		Id:          newVersionedThread.Id,
-		Name:        newVersionedThread.Name,
-		Version:     newVersionedThread.Version,
-		ThreadId:    newVersionedThread.ThreadId,
-		Archived:    newVersionedThread.Archived,
-		Deleted:     newVersionedThread.Deleted,
-		DateCreated: newVersionedThread.DateCreated,
-		Strings:     nil,
-	}, nil
-}
-
-func (r *Repository) FindAll() ([]*core.Thread, error) {
-	versionedThreads, err := r.VersionedThreadDao.FindAll()
-	if err != nil {
-		return nil, fmt.Errorf("failed to find threads from versioned_thread table: %s", err)
-	}
-
-	return convertVersionedThreadsToCoreThreads(versionedThreads), nil
-}
-
-func convertVersionedThreadToCoreThread(versionedThread *threaddao.VersionedThreadRecord) *core.Thread {
-	return &core.Thread{
-		Id:          versionedThread.Id,
-		Name:        versionedThread.Name,
-		Version:     versionedThread.Version,
-		ThreadId:    versionedThread.ThreadId,
-		Archived:    versionedThread.Archived,
-		Deleted:     versionedThread.Deleted,
-		DateCreated: versionedThread.DateCreated,
-		Strings:     nil, // TODO
-	}
+	return savedVersionedThreadRecord.ToThread(thread.Strings), nil
 }
 
 func convertVersionedThreadsToCoreThreads(versionedThreads []*threaddao.VersionedThreadRecord) []*core.Thread {
 	var threads []*core.Thread
 
 	for _, t := range versionedThreads {
-		threads = append(threads, convertVersionedThreadToCoreThread(t))
+		threads = append(threads, t.ToThread(nil)) // TODO: Need strings
 	}
 
 	return threads

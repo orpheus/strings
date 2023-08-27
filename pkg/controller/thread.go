@@ -8,7 +8,8 @@ import (
 	"github.com/orpheus/strings/pkg/infra/sqldb"
 	"github.com/orpheus/strings/pkg/persistence/dao/stringdao"
 	"github.com/orpheus/strings/pkg/persistence/dao/threaddao"
-	"github.com/orpheus/strings/pkg/persistence/repo/threadrepo"
+	"github.com/orpheus/strings/pkg/persistence/repo/pgrepo/stringrepo"
+	"github.com/orpheus/strings/pkg/persistence/repo/pgrepo/threadrepo"
 	"github.com/orpheus/strings/pkg/service"
 	"net/http"
 )
@@ -16,11 +17,14 @@ import (
 func NewThreadController(router *gin.RouterGroup, store *sqldb.Store) *ThreadController {
 	threadDao := &threaddao.ThreadDao{Store: store}
 	versionedThreadDao := &threaddao.VersionedThreadDao{Store: store}
+
 	stringDao := &stringdao.StringDao{Store: store}
+	versionedStringDao := &stringdao.VersionedStringDao{Store: store}
 
 	controller := &ThreadController{
 		ThreadService: service.NewThreadService(
-			threadrepo.NewThreadRepository(threadDao, stringDao, versionedThreadDao),
+			threadrepo.NewThreadRepository(threadDao, versionedThreadDao),
+			stringrepo.NewStringRepository(stringDao, versionedStringDao),
 		),
 	}
 
@@ -49,16 +53,11 @@ func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
 	{
 		threadsRouterGroup.POST("", t.PostThreads)
 		threadsRouterGroup.GET("", t.GetThreads)
-	}
-
-	threadRouterGroup := router.Group("/thread")
-	{
-		threadRouterGroup.GET("", t.Archive)
-		threadRouterGroup.POST("/archive/:id", t.Archive)
-		threadRouterGroup.POST("/restore/:id", t.Restore)
-		threadRouterGroup.POST("/activate/:id", t.Activate)
-		threadRouterGroup.POST("/deactivate/:id", t.Deactivate)
-		threadRouterGroup.POST("/delete/:id", t.Delete)
+		threadsRouterGroup.POST("/archive/:id", t.Archive)
+		threadsRouterGroup.POST("/restore/:id", t.Restore)
+		threadsRouterGroup.POST("/activate/:id", t.Activate)
+		threadsRouterGroup.POST("/deactivate/:id", t.Deactivate)
+		threadsRouterGroup.POST("/delete/:id", t.Delete)
 	}
 }
 
