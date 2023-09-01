@@ -70,6 +70,32 @@ String
       5. create new versions for updated strings
       6. create new string records for new strings
       7. return and bump thread version
+6. Delete thread
+   1. required: `:id` query param, uuid
+   2. response: empty, use status code to determine error
+   3. creates a new thread record with `deleted: true`
+   4. `version` still gets bumped, it must remain different to keep the previous version's quality intact during graphical ui
+   5. use `include_deleted` on GET /threads to get deleted (todo)
+   6. if already deleted, will return 400
+7. Archive thread
+   1. required: `:id` query param, uuid
+   2. response: empty, use status code to determine error
+   3. creates a new thread record with `archived: true`
+   4. `version` still gets bumped, it must remain different to keep the previous version's quality intact during graphical ui
+   5. if already deleted, will return 400
+   6. if already archived, will return 400
+8. Restore thread
+   1. required: `:id` query param, uuid
+   2. response: empty, use status code to determine error
+   3. creates a new thread record with `archived: false`
+   4. `version` still gets bumped, it must remain different to keep the previous version's quality intact during graphical ui
+   5. if already deleted, will return 400
+   6. if already restored, will return 400
+9. Delete string
+10. Activate string
+11. Deactivate string
+12. Private string
+13. Public string
 
 #### Cases
 

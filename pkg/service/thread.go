@@ -22,8 +22,11 @@ type ThreadService struct {
 type ThreadRepository interface {
 	FindByThreadId(threadId uuid.UUID) (*core.Thread, error)
 	CreateNewThread(thread *core.Thread) (*core.Thread, error)
-	CreateNewThreadVersion(thread *core.Thread) (*core.Thread, error)
+	CreateVersionedThread(thread *core.Thread) (*core.Thread, error)
 	FindAll() ([]*core.Thread, error)
+	DeleteByThreadId(threadId uuid.UUID) error
+	ArchiveByThreadId(threadId uuid.UUID) error
+	RestoreByThreadId(threadId uuid.UUID) error
 }
 
 type StringRepository interface {
@@ -121,7 +124,7 @@ func (t *ThreadService) updateThreadIfNeeded(clientThread *core.Thread, serverTh
 
 	serverThread.Strings = serverStrings
 
-	return t.ThreadRepository.CreateNewThreadVersion(serverThread)
+	return t.ThreadRepository.CreateVersionedThread(serverThread)
 }
 
 func (t *ThreadService) createStrings(thread *core.Thread) ([]*core.String, error) {
@@ -315,27 +318,14 @@ func (t *ThreadService) GetThreadIds() ([]uuid.UUID, error) {
 	panic("implement me")
 }
 
-func (t *ThreadService) ArchiveThread(id uuid.UUID) (*core.Thread, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThreadService) ArchiveThread(threadId uuid.UUID) error {
+	return t.ThreadRepository.ArchiveByThreadId(threadId)
 }
 
-func (t *ThreadService) RestoreThread(id uuid.UUID) (*core.Thread, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThreadService) RestoreThread(threadId uuid.UUID) error {
+	return t.ThreadRepository.RestoreByThreadId(threadId)
 }
 
-func (t *ThreadService) ActivateThread(id uuid.UUID) (*core.Thread, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (t *ThreadService) DeactivateThread(id uuid.UUID) (*core.Thread, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (t *ThreadService) DeleteThread(id uuid.UUID) (*core.Thread, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThreadService) DeleteThread(threadId uuid.UUID) error {
+	return t.ThreadRepository.DeleteByThreadId(threadId)
 }

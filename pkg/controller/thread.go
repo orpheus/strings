@@ -41,11 +41,9 @@ type ThreadService interface {
 	PostThread(thread *core.Thread) (*core.Thread, error)
 	GetThreads() ([]*core.Thread, error)
 	GetThreadIds() ([]uuid.UUID, error) // used if ?only_ids=true
-	ArchiveThread(id uuid.UUID) (*core.Thread, error)
-	RestoreThread(id uuid.UUID) (*core.Thread, error)
-	ActivateThread(id uuid.UUID) (*core.Thread, error)
-	DeactivateThread(id uuid.UUID) (*core.Thread, error)
-	DeleteThread(id uuid.UUID) (*core.Thread, error)
+	DeleteThread(threadId uuid.UUID) error
+	ArchiveThread(threadId uuid.UUID) error
+	RestoreThread(threadId uuid.UUID) error
 }
 
 func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
@@ -55,8 +53,6 @@ func (t *ThreadController) RegisterRoutes(router *gin.RouterGroup) {
 		threadsRouterGroup.GET("", t.GetThreads)
 		threadsRouterGroup.POST("/archive/:id", t.Archive)
 		threadsRouterGroup.POST("/restore/:id", t.Restore)
-		threadsRouterGroup.POST("/activate/:id", t.Activate)
-		threadsRouterGroup.POST("/deactivate/:id", t.Deactivate)
 		threadsRouterGroup.POST("/delete/:id", t.Delete)
 	}
 }
@@ -73,7 +69,7 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 
 	threadsResponse, err := t.ThreadService.PostThread(&thread)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("ThreadService.PostThread failed: %s", err)))
+		handleServerHandlerError(c, err)
 		return
 	}
 
@@ -83,7 +79,7 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 func (t *ThreadController) GetThreads(c *gin.Context) {
 	threads, err := t.ThreadService.GetThreads()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("ThreadService.GetThreads failed: %s", err)))
+		handleServerHandlerError(c, err)
 		return
 	}
 
@@ -98,25 +94,63 @@ func (t *ThreadController) GetThreads(c *gin.Context) {
 		return
 	}
 
+	for _, thread := range threads {
+		thread.Strings = nil
+	}
+
 	c.JSON(http.StatusOK, threads)
 }
 
 func (t *ThreadController) Archive(c *gin.Context) {
+	threadId := c.Param("id")
+	threadIdUuid, err := uuid.Parse(threadId)
 
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
+
+	err = t.ThreadService.ArchiveThread(threadIdUuid)
+	if err != nil {
+		handleServerHandlerError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 func (t *ThreadController) Restore(c *gin.Context) {
+	threadId := c.Param("id")
+	threadIdUuid, err := uuid.Parse(threadId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
 
-}
+	err = t.ThreadService.RestoreThread(threadIdUuid)
+	if err != nil {
+		handleServerHandlerError(c, err)
+		return
+	}
 
-func (t *ThreadController) Activate(c *gin.Context) {
-
-}
-
-func (t *ThreadController) Deactivate(c *gin.Context) {
-
+	c.JSON(http.StatusOK, nil)
 }
 
 func (t *ThreadController) Delete(c *gin.Context) {
+	threadId := c.Param("id")
+	threadIdUuid, err := uuid.Parse(threadId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
 
+	err = t.ThreadService.DeleteThread(threadIdUuid)
+	if err != nil {
+		if err != nil {
+			handleServerHandlerError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
