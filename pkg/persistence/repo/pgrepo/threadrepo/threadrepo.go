@@ -103,29 +103,52 @@ func (r *Repository) CreateNewThread(thread *core.Thread) (*core.Thread, error) 
 	return versionedThreadRecord.ToThread(thread.Strings), nil
 }
 
-// CreateNewThreadVersion updates an existing thread, does not care about or deal with any initial creation
+// CreateVersionedThread updates an existing thread, does not care about or deal with any initial creation
 // logic. That should be handled outside and separate from this function. Updates existing thread.
-func (r *Repository) CreateNewThreadVersion(thread *core.Thread) (*core.Thread, error) {
-	if thread == nil {
-		return nil, fmt.Errorf("thread is nil")
+func (r *Repository) CreateVersionedThread(thread *core.Thread) (*core.Thread, error) {
+	return r.internalCreateVersionedThread(thread.ThreadId, func(serverThread *core.Thread) error {
+		if serverThread.Deleted == true {
+			return ErrThreadAlreadyDeleted
+		}
+		serverThread.Name = thread.Name
+		return nil
+	})
+}
+
+type ThreadAssigner func(serverThread *core.Thread) error
+
+var ErrThreadNotFound = fmt.Errorf("thread not found")
+var ErrMissingThreadId = fmt.Errorf("misssing thread id")
+var ErrThreadAlreadyDeleted = fmt.Errorf("thread already deleted")
+var ErrThreadAlreadyArchived = fmt.Errorf("thread already archived")
+var ErrThreadAlreadyRestored = fmt.Errorf("thread already restored")
+
+func (r *Repository) internalCreateVersionedThread(threadId uuid.UUID, threadAssigners ...ThreadAssigner) (*core.Thread, error) {
+	if threadId == uuid.Nil {
+		return nil, ErrMissingThreadId
 	}
 
-	if thread.ThreadId == uuid.Nil {
-		return nil, fmt.Errorf("missing thread id")
-	}
-
-	serverThread, err := r.FindByThreadId(thread.ThreadId)
+	// find the original thread / cannot create versioned thread if there's no source thread
+	serverThread, err := r.FindByThreadId(threadId)
 	if err != nil {
 		return nil, fmt.Errorf("err during thread lookup: %s", err)
 	}
 
 	if serverThread == nil {
-		return nil, fmt.Errorf("thread not found %s", thread.Id)
+		return nil, ErrThreadNotFound
+	}
+
+	// allow callers to decide how the thread is to be created
+	for _, threadAssign := range threadAssigners {
+		err := threadAssign(serverThread)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	savedVersionedThreadRecord, err := r.VersionedThreadDao.Save(&threaddao.VersionedThreadRecord{
 		Id:          uuid.New(),
-		Name:        thread.Name,
+		Name:        serverThread.Name,
 		Version:     serverThread.Version + 1,
 		ThreadId:    serverThread.ThreadId,
 		Archived:    serverThread.Archived,
@@ -136,7 +159,7 @@ func (r *Repository) CreateNewThreadVersion(thread *core.Thread) (*core.Thread, 
 		return nil, fmt.Errorf("failed to create new thread version: %s", err)
 	}
 
-	return savedVersionedThreadRecord.ToThread(thread.Strings), nil
+	return savedVersionedThreadRecord.ToThread(serverThread.Strings), nil
 }
 
 func convertVersionedThreadsToCoreThreads(versionedThreads []*threaddao.VersionedThreadRecord) []*core.Thread {
@@ -148,4 +171,46 @@ func convertVersionedThreadsToCoreThreads(versionedThreads []*threaddao.Versione
 	}
 
 	return threads
+}
+
+func (r *Repository) DeleteByThreadId(threadId uuid.UUID) error {
+	_, err := r.internalCreateVersionedThread(threadId, func(serverThread *core.Thread) error {
+		if serverThread.Deleted == true {
+			return ErrThreadAlreadyDeleted
+		}
+		serverThread.Deleted = true
+		return nil
+	})
+
+	return err
+}
+
+func (r *Repository) ArchiveByThreadId(threadId uuid.UUID) error {
+	_, err := r.internalCreateVersionedThread(threadId, func(serverThread *core.Thread) error {
+		if serverThread.Deleted == true {
+			return ErrThreadAlreadyDeleted
+		}
+		if serverThread.Archived == true {
+			return ErrThreadAlreadyArchived
+		}
+		serverThread.Archived = true
+		return nil
+	})
+
+	return err
+}
+
+func (r *Repository) RestoreByThreadId(threadId uuid.UUID) error {
+	_, err := r.internalCreateVersionedThread(threadId, func(serverThread *core.Thread) error {
+		if serverThread.Deleted == true {
+			return ErrThreadAlreadyDeleted
+		}
+		if serverThread.Archived == false {
+			return ErrThreadAlreadyRestored
+		}
+		serverThread.Archived = false
+		return nil
+	})
+
+	return err
 }

@@ -22,13 +22,13 @@ func (t *VersionedThreadDao) Save(record *VersionedThreadRecord) (*VersionedThre
 
 	query := `
 	insert into versioned_thread (
-		id, name, version, thread_id
-	) values ($1, $2, $3, $4) 
+		id, name, version, thread_id, deleted, archived
+	) values ($1, $2, $3, $4, $5, $6) 
 	returning id, name, version, thread_id, archived, deleted, date_created;
 	`
 
 	ex := t.Store.GetExecutor()
-	row := ex.QueryRow(query, record.Id, record.Name, record.Version, record.ThreadId)
+	row := ex.QueryRow(query, record.Id, record.Name, record.Version, record.ThreadId, record.Deleted, record.Archived)
 
 	var r VersionedThreadRecord
 	err := row.Scan(&r.Id, &r.Name, &r.Version, &r.ThreadId, &r.Archived, &r.Deleted, &r.DateCreated)
