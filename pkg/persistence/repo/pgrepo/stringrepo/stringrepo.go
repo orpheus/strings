@@ -194,13 +194,6 @@ func (s *StringRepository) DeleteStringByStringId(stringId uuid.UUID) error {
 	}
 
 	return nil
-
-	//updatedServerStrings, err := s.VersionedStringDao.FindAllByThreadId(serverString.ThreadId)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//return convertVersionedStringsToCoreStrings(updatedServerStrings), nil
 }
 
 func convertVersionedStringsToCoreStrings(versionedStrings []*stringdao.VersionedStringRecord) []*core.String {

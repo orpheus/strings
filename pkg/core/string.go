@@ -38,3 +38,7 @@ func (s *String) Diff(other *String) bool {
 
 	return !reflect.DeepEqual(this, that)
 }
+
+func (s *String) Locked() bool {
+	return s.Archived || s.Deleted
+}

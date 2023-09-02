@@ -31,6 +31,7 @@ var clientErrors = []error{
 	stringrepo.ErrStringNotFound,
 
 	threadsvc.ErrThreadCannotBeUpdated,
+	threadsvc.ErrStringCannotBeUpdated,
 }
 
 // Defined custom errors here that are the result of a server issue
