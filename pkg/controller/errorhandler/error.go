@@ -27,8 +27,14 @@ var clientErrors = []error{
 	threadrepo.ErrThreadAlreadyDeleted,
 	threadrepo.ErrThreadAlreadyRestored,
 
-	stringrepo.ErrStringAlreadyDeleted,
 	stringrepo.ErrStringNotFound,
+	stringrepo.ErrStringAlreadyDeleted,
+	stringrepo.ErrStringAlreadyArchived,
+	stringrepo.ErrStringAlreadyRestored,
+	stringrepo.ErrStringAlreadyActive,
+	stringrepo.ErrStringAlreadyDeleted,
+	stringrepo.ErrStringAlreadyPrivate,
+	stringrepo.ErrStringAlreadyPublic,
 
 	threadsvc.ErrThreadCannotBeUpdated,
 	threadsvc.ErrStringCannotBeUpdated,

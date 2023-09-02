@@ -26,21 +26,15 @@ func (v *VersionedStringDao) Save(record *VersionedStringRecord) (*VersionedStri
 
 	query := `
 	insert into versioned_string (
-		id, name, version, string_id, thread_id, "order", active, archived, deleted
-	) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-	returning id, name, version, string_id, thread_id, "order", active, archived, deleted, date_created;
+		id, name, version, string_id, thread_id, "order", active, archived, private, deleted
+	) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+	returning id, name, version, string_id, thread_id, "order", active, archived, private, deleted, date_created;
 	`
 
 	ex := v.Store.GetExecutor()
-	row := ex.QueryRow(query, record.Id, record.Name, record.Version, record.StringId, record.ThreadId, record.Order, record.Active, record.Archived, record.Deleted)
+	row := ex.QueryRow(query, record.Id, record.Name, record.Version, record.StringId, record.ThreadId, record.Order, record.Active, record.Archived, record.Private, record.Deleted)
 
-	var r VersionedStringRecord
-	err := row.Scan(&r.Id, &r.Name, &r.Version, &r.StringId, &r.ThreadId, &r.Order, &r.Active, &r.Archived, &r.Deleted, &r.DateCreated)
-	if err != nil {
-		return nil, fmt.Errorf("scan err: %s", err)
-	}
-
-	return &r, nil
+	return scanRecord(row)
 }
 
 // FindByStringId finds the latest version of a string by string id. Returns nil if no record is found.
@@ -58,15 +52,7 @@ func (v *VersionedStringDao) FindByStringId(stringId uuid.UUID) (*VersionedStrin
 	ex := v.Store.GetExecutor()
 	row := ex.QueryRow(query, stringId)
 
-	var r VersionedStringRecord
-	if err := row.Scan(&r.Id, &r.Name, &r.Version, &r.StringId, &r.ThreadId, &r.Order, &r.Active, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to scan record: %s", err)
-	}
-
-	return &r, nil
+	return scanRecord(row)
 }
 
 func (v *VersionedStringDao) FindAllByThreadId(threadId uuid.UUID) ([]*VersionedStringRecord, error) {
@@ -122,15 +108,32 @@ func (v *VersionedStringDao) DeprecatedFindAllInThreadByStringId(stringId uuid.U
 	return scanRecords(rows)
 }
 
+func scanMe() (record *VersionedStringRecord, pointsToFields []any) {
+	var r VersionedStringRecord
+	return &r, []any{
+		&r.Id,
+		&r.Name,
+		&r.Version,
+		&r.StringId,
+		&r.ThreadId,
+		&r.Order,
+		&r.Active,
+		&r.Archived,
+		&r.Private,
+		&r.Deleted,
+		&r.DateCreated,
+	}
+}
+
 func scanRecords(rows *sql.Rows) ([]*VersionedStringRecord, error) {
 	var records []*VersionedStringRecord
 	for rows.Next() {
-		var r VersionedStringRecord
-		if err := rows.Scan(&r.Id, &r.Name, &r.Version, &r.StringId, &r.ThreadId, &r.Order, &r.Active, &r.Archived, &r.Deleted, &r.DateCreated); err != nil {
+		r, fields := scanMe()
+		if err := rows.Scan(fields...); err != nil {
 			return nil, fmt.Errorf("failed to scan record: %s", err)
 		}
 
-		records = append(records, &r)
+		records = append(records, r)
 	}
 
 	if rows.Err() != nil {
@@ -138,4 +141,14 @@ func scanRecords(rows *sql.Rows) ([]*VersionedStringRecord, error) {
 	}
 
 	return records, nil
+}
+
+func scanRecord(row *sql.Row) (*VersionedStringRecord, error) {
+	r, fields := scanMe()
+	err := row.Scan(fields...)
+	if err != nil {
+		return nil, fmt.Errorf("scan err: %s", err)
+	}
+
+	return r, nil
 }

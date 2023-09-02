@@ -15,6 +15,7 @@ type String struct {
 	Order       int       `json:"order"`
 	Active      bool      `json:"active"`
 	Archived    bool      `json:"archived"`
+	Private     bool      `json:"private"`
 	Deleted     bool      `json:"deleted"`
 	DateCreated time.Time `json:"dateCreated"`
 }
