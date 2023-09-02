@@ -1,16 +1,17 @@
-package controller
+package threadcon
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/orpheus/strings/pkg/controller/errorhandler"
 	"github.com/orpheus/strings/pkg/core"
 	"github.com/orpheus/strings/pkg/infra/sqldb"
 	"github.com/orpheus/strings/pkg/persistence/dao/stringdao"
 	"github.com/orpheus/strings/pkg/persistence/dao/threaddao"
 	"github.com/orpheus/strings/pkg/persistence/repo/pgrepo/stringrepo"
 	"github.com/orpheus/strings/pkg/persistence/repo/pgrepo/threadrepo"
-	"github.com/orpheus/strings/pkg/service"
+	"github.com/orpheus/strings/pkg/service/threadsvc"
 	"net/http"
 )
 
@@ -22,7 +23,7 @@ func NewThreadController(router *gin.RouterGroup, store *sqldb.Store) *ThreadCon
 	versionedStringDao := &stringdao.VersionedStringDao{Store: store}
 
 	controller := &ThreadController{
-		ThreadService: service.NewThreadService(
+		ThreadService: threadsvc.NewThreadService(
 			threadrepo.NewThreadRepository(threadDao, versionedThreadDao),
 			stringrepo.NewStringRepository(stringDao, versionedStringDao),
 		),
@@ -63,14 +64,18 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 	// using c.BindJSON calls c.MustBindJSON which writes the response header as `text/plain` which can't be overriddens
 	err := c.ShouldBindJSON(&thread)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, NewApiError(0, fmt.Sprintf("failed to bind request body with thread: %s", err)))
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("failed to bind request body with thread: %s", err)))
 		return
 	}
 
 	threadsResponse, err := t.ThreadService.PostThread(&thread)
 	if err != nil {
-		handleServerHandlerError(c, err)
+		errorhandler.HandleApiError(c, err)
 		return
+	}
+
+	if threadsResponse.Strings == nil {
+		threadsResponse.Strings = []*core.String{}
 	}
 
 	c.JSON(http.StatusOK, threadsResponse)
@@ -79,7 +84,7 @@ func (t *ThreadController) PostThreads(c *gin.Context) {
 func (t *ThreadController) GetThreads(c *gin.Context) {
 	threads, err := t.ThreadService.GetThreads()
 	if err != nil {
-		handleServerHandlerError(c, err)
+		errorhandler.HandleApiError(c, err)
 		return
 	}
 
@@ -94,8 +99,8 @@ func (t *ThreadController) GetThreads(c *gin.Context) {
 		return
 	}
 
-	for _, thread := range threads {
-		thread.Strings = nil
+	if threads == nil {
+		threads = []*core.Thread{}
 	}
 
 	c.JSON(http.StatusOK, threads)
@@ -104,15 +109,14 @@ func (t *ThreadController) GetThreads(c *gin.Context) {
 func (t *ThreadController) Archive(c *gin.Context) {
 	threadId := c.Param("id")
 	threadIdUuid, err := uuid.Parse(threadId)
-
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("%s", err)))
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
 		return
 	}
 
 	err = t.ThreadService.ArchiveThread(threadIdUuid)
 	if err != nil {
-		handleServerHandlerError(c, err)
+		errorhandler.HandleApiError(c, err)
 		return
 	}
 
@@ -123,13 +127,13 @@ func (t *ThreadController) Restore(c *gin.Context) {
 	threadId := c.Param("id")
 	threadIdUuid, err := uuid.Parse(threadId)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("%s", err)))
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
 		return
 	}
 
 	err = t.ThreadService.RestoreThread(threadIdUuid)
 	if err != nil {
-		handleServerHandlerError(c, err)
+		errorhandler.HandleApiError(c, err)
 		return
 	}
 
@@ -140,16 +144,14 @@ func (t *ThreadController) Delete(c *gin.Context) {
 	threadId := c.Param("id")
 	threadIdUuid, err := uuid.Parse(threadId)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, NewApiError(0, fmt.Sprintf("%s", err)))
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
 		return
 	}
 
 	err = t.ThreadService.DeleteThread(threadIdUuid)
 	if err != nil {
-		if err != nil {
-			handleServerHandlerError(c, err)
-			return
-		}
+		errorhandler.HandleApiError(c, err)
+		return
 	}
 
 	c.JSON(http.StatusOK, nil)

@@ -1,4 +1,4 @@
-package service
+package threadsvc
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ type ThreadRepository interface {
 
 type StringRepository interface {
 	CreateNewString(string *core.String) (*core.String, error)
-	CreateNewStringVersion(string *core.String) (*core.String, error)
+	CreateVersionedString(string *core.String) (*core.String, error)
 	FindAllByThreadId(threadId uuid.UUID) ([]*core.String, error)
 }
 
@@ -97,22 +97,33 @@ func (t *ThreadService) createNewThread(thread *core.Thread) (*core.Thread, erro
 	return newThread, nil
 }
 
+var ErrThreadCannotBeUpdated = fmt.Errorf("deleted or archived threads cannot be updated")
+
 func (t *ThreadService) updateThreadIfNeeded(clientThread *core.Thread, serverThread *core.Thread) (*core.Thread, error) {
 	// if client did not provide name, just use the server name. client cannot set empty name
 	if clientThread.Name == "" {
 		clientThread.Name = serverThread.Name
 	}
 
+	// checks if there's a difference in the thread or strings
 	if !clientThread.Diff(serverThread) {
 		return serverThread, nil
+	}
+
+	// if they didn't try to update the thread, just return the server thread
+	// but do not let the client try to update a deleted or archived thread
+	if serverThread.Locked() {
+		return nil, ErrThreadCannotBeUpdated
 	}
 
 	if serverThread == nil {
 		return nil, fmt.Errorf("cannot update thread, thread not found %s", clientThread.Id)
 	}
 
+	// updates just the thread values (not strings)
 	serverThread.UpdateFromClientIgnoreStrings(clientThread)
 
+	// checks that the client thread updates are valid
 	if err := serverThread.ValidateSelf(); err != nil {
 		return nil, fmt.Errorf("thread failed validation, %s", err)
 	}
@@ -122,9 +133,14 @@ func (t *ThreadService) updateThreadIfNeeded(clientThread *core.Thread, serverTh
 		return nil, err
 	}
 
-	serverThread.Strings = serverStrings
+	updatedThread, err := t.ThreadRepository.CreateVersionedThread(serverThread)
+	if err != nil {
+		return nil, err
+	}
 
-	return t.ThreadRepository.CreateVersionedThread(serverThread)
+	updatedThread.Strings = serverStrings
+
+	return updatedThread, nil
 }
 
 func (t *ThreadService) createStrings(thread *core.Thread) ([]*core.String, error) {
@@ -271,7 +287,7 @@ func (t *ThreadService) updateAndCreateStrings(clientThread, serverThread *core.
 	for _, orderedString := range orderedStrings {
 		if _, exists := serverStringMap[orderedString.StringId]; exists {
 			if _, exists := updatedStrings[orderedString.StringId]; exists {
-				updatedString, err := t.StringRepository.CreateNewStringVersion(orderedString)
+				updatedString, err := t.StringRepository.CreateVersionedString(orderedString)
 				if err != nil {
 					return nil, fmt.Errorf("failed to update string: %s", err)
 				}

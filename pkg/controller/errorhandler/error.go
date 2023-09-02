@@ -1,10 +1,12 @@
-package controller
+package errorhandler
 
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/orpheus/strings/pkg/core"
+	"github.com/orpheus/strings/pkg/persistence/repo/pgrepo/stringrepo"
 	"github.com/orpheus/strings/pkg/persistence/repo/pgrepo/threadrepo"
+	"github.com/orpheus/strings/pkg/service/threadsvc"
 	"net/http"
 )
 
@@ -19,15 +21,22 @@ func NewApiError(code int, msg string) ApiError {
 	}}
 }
 
-func handleServerHandlerError(c *gin.Context, err error) {
-	clientErrors := []error{
-		threadrepo.ErrThreadAlreadyArchived,
-		threadrepo.ErrThreadAlreadyDeleted,
-		threadrepo.ErrThreadAlreadyRestored,
-	}
+// Defined custom errors here that are the result of a client issue
+var clientErrors = []error{
+	threadrepo.ErrThreadAlreadyArchived,
+	threadrepo.ErrThreadAlreadyDeleted,
+	threadrepo.ErrThreadAlreadyRestored,
 
-	var serverErrors []error
+	stringrepo.ErrStringAlreadyDeleted,
+	stringrepo.ErrStringNotFound,
 
+	threadsvc.ErrThreadCannotBeUpdated,
+}
+
+// Defined custom errors here that are the result of a server issue
+var serverErrors []error
+
+func HandleApiError(c *gin.Context, err error) {
 	for _, clientError := range clientErrors {
 		if errors.Is(err, clientError) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, NewApiError(0, err.Error()))

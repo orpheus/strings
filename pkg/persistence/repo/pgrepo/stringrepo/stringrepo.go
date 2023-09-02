@@ -23,6 +23,7 @@ type VersionedStringDao interface {
 	Save(record *stringdao.VersionedStringRecord) (*stringdao.VersionedStringRecord, error)
 	FindByStringId(stringId uuid.UUID) (*stringdao.VersionedStringRecord, error)
 	FindAllByThreadId(threadId uuid.UUID) ([]*stringdao.VersionedStringRecord, error)
+	//FindAllInThreadByStringId(stringId uuid.UUID) ([]*stringdao.VersionedStringRecord, error)
 }
 
 type StringRepository struct {
@@ -77,8 +78,8 @@ func (s *StringRepository) CreateNewString(string *core.String) (*core.String, e
 	}, nil
 }
 
-// CreateNewStringVersion creates a new versioned string record.
-func (s *StringRepository) CreateNewStringVersion(string *core.String) (*core.String, error) {
+// CreateVersionedString creates a new versioned string record.
+func (s *StringRepository) CreateVersionedString(string *core.String) (*core.String, error) {
 	if string == nil {
 		return nil, fmt.Errorf("string is nil")
 	}
@@ -126,6 +127,80 @@ func (s *StringRepository) FindAllByThreadId(threadId uuid.UUID) ([]*core.String
 	}
 
 	return convertVersionedStringsToCoreStrings(versionedStrings), nil
+}
+
+var ErrStringNotFound = fmt.Errorf("string not found")
+var ErrStringAlreadyDeleted = fmt.Errorf("string already deleted")
+
+func (s *StringRepository) DeleteStringByStringId(stringId uuid.UUID) error {
+	serverString, err := s.VersionedStringDao.FindByStringId(stringId)
+	if err != nil {
+		return err
+	}
+
+	if serverString == nil {
+		return ErrStringNotFound
+	}
+
+	if serverString.Deleted {
+		return ErrStringAlreadyDeleted
+	}
+
+	versionedStrings, err := s.VersionedStringDao.FindAllByThreadId(serverString.ThreadId)
+	if err != nil {
+		return err
+	}
+
+	deletedString := false
+	for _, versionedString := range versionedStrings {
+
+		// delete string
+		if versionedString.StringId == stringId {
+			_, err := s.VersionedStringDao.Save(&stringdao.VersionedStringRecord{
+				Id:          uuid.New(),
+				Name:        versionedString.Name,
+				Version:     versionedString.Version + 1,
+				StringId:    versionedString.StringId,
+				ThreadId:    versionedString.ThreadId,
+				Order:       0,
+				Active:      versionedString.Active,
+				Archived:    versionedString.Archived,
+				Deleted:     true,
+				DateCreated: time.Now(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to delete string: %s", err)
+			}
+			deletedString = true
+		} else if deletedString {
+
+			// re-order proceeding strings
+			_, err := s.VersionedStringDao.Save(&stringdao.VersionedStringRecord{
+				Id:          uuid.New(),
+				Name:        versionedString.Name,
+				Version:     versionedString.Version + 1,
+				StringId:    versionedString.StringId,
+				ThreadId:    versionedString.ThreadId,
+				Order:       versionedString.Order - 1,
+				Active:      versionedString.Active,
+				Archived:    versionedString.Archived,
+				Deleted:     versionedString.Deleted,
+				DateCreated: time.Now(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to re-order string after delete: %s", err)
+			}
+		}
+	}
+
+	return nil
+
+	//updatedServerStrings, err := s.VersionedStringDao.FindAllByThreadId(serverString.ThreadId)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return convertVersionedStringsToCoreStrings(updatedServerStrings), nil
 }
 
 func convertVersionedStringsToCoreStrings(versionedStrings []*stringdao.VersionedStringRecord) []*core.String {

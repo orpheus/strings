@@ -81,3 +81,7 @@ func (t *Thread) DiffStringsOnly(otherThread *Thread) bool {
 	// return false if no changes found between strings in this and that thread
 	return false
 }
+
+func (t *Thread) Locked() bool {
+	return t.Deleted == true || t.Archived == true
+}
