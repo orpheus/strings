@@ -36,6 +36,8 @@ type StringsService interface {
 	RestoreString(stringId uuid.UUID) error
 	ActivateString(stringId uuid.UUID) error
 	DeactivateString(stringId uuid.UUID) error
+	PublicString(stringId uuid.UUID) error
+	PrivateString(stringId uuid.UUID) error
 	DeleteString(stringId uuid.UUID) error
 }
 
@@ -46,24 +48,78 @@ func (s *StringController) RegisterRoutes(router *gin.RouterGroup) {
 		strings.POST("/restore/:id", s.Restore)
 		strings.POST("/activate/:id", s.Activate)
 		strings.POST("/deactivate/:id", s.Deactivate)
+		strings.POST("/private/:id", s.Private)
+		strings.POST("/public/:id", s.Public)
 		strings.POST("/delete/:id", s.Delete)
 	}
 }
 
 func (s *StringController) Archive(c *gin.Context) {
+	stringId := c.Param("id")
+	stringIdUuid, err := uuid.Parse(stringId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
 
+	err = s.StringsService.ArchiveString(stringIdUuid)
+	if err != nil {
+		errorhandler.HandleApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 func (s *StringController) Restore(c *gin.Context) {
+	stringId := c.Param("id")
+	stringIdUuid, err := uuid.Parse(stringId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
 
+	err = s.StringsService.RestoreString(stringIdUuid)
+	if err != nil {
+		errorhandler.HandleApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 func (s *StringController) Activate(c *gin.Context) {
+	stringId := c.Param("id")
+	stringIdUuid, err := uuid.Parse(stringId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
 
+	err = s.StringsService.ActivateString(stringIdUuid)
+	if err != nil {
+		errorhandler.HandleApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 func (s *StringController) Deactivate(c *gin.Context) {
+	stringId := c.Param("id")
+	stringIdUuid, err := uuid.Parse(stringId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
 
+	err = s.StringsService.DeactivateString(stringIdUuid)
+	if err != nil {
+		errorhandler.HandleApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
 
 func (s *StringController) Delete(c *gin.Context) {
@@ -75,6 +131,40 @@ func (s *StringController) Delete(c *gin.Context) {
 	}
 
 	err = s.StringsService.DeleteString(stringIdUuid)
+	if err != nil {
+		errorhandler.HandleApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+func (s *StringController) Private(c *gin.Context) {
+	stringId := c.Param("id")
+	stringIdUuid, err := uuid.Parse(stringId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
+
+	err = s.StringsService.PrivateString(stringIdUuid)
+	if err != nil {
+		errorhandler.HandleApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+func (s *StringController) Public(c *gin.Context) {
+	stringId := c.Param("id")
+	stringIdUuid, err := uuid.Parse(stringId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorhandler.NewApiError(0, fmt.Sprintf("%s", err)))
+		return
+	}
+
+	err = s.StringsService.PublicString(stringIdUuid)
 	if err != nil {
 		errorhandler.HandleApiError(c, err)
 		return
