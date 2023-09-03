@@ -30,10 +30,16 @@ type StringRepository struct {
 	VersionedStringDao
 }
 
+var ErrStringMissingName = fmt.Errorf("string missing name")
+
 // CreateNewString creates a new string record and a new versioned string record with version 1.
 func (s *StringRepository) CreateNewString(string *core.String) (*core.String, error) {
 	if string == nil {
 		return nil, fmt.Errorf("failed to create new string, missing `string`")
+	}
+
+	if string.Name == "" {
+		return nil, ErrStringMissingName
 	}
 
 	if string.StringId == uuid.Nil {

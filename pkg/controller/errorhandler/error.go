@@ -28,6 +28,7 @@ var clientErrors = []error{
 	threadrepo.ErrThreadAlreadyRestored,
 
 	stringrepo.ErrStringNotFound,
+	stringrepo.ErrStringMissingName,
 	stringrepo.ErrStringAlreadyDeleted,
 	stringrepo.ErrStringAlreadyArchived,
 	stringrepo.ErrStringAlreadyRestored,

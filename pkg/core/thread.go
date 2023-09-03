@@ -85,3 +85,16 @@ func (t *Thread) DiffStringsOnly(otherThread *Thread) bool {
 func (t *Thread) Locked() bool {
 	return t.Deleted == true || t.Archived == true
 }
+
+func (t *Thread) FilterDeleted() *Thread {
+	var filteredStrings []*String
+
+	for _, str := range t.Strings {
+		if !str.Deleted {
+			filteredStrings = append(filteredStrings, str)
+		}
+	}
+
+	t.Strings = filteredStrings
+	return t
+}
