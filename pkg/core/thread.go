@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"reflect"
+	"sort"
 	"time"
 )
 
@@ -96,5 +97,19 @@ func (t *Thread) FilterDeleted() *Thread {
 	}
 
 	t.Strings = filteredStrings
+	return t
+}
+
+func (t *Thread) SortByOrder() *Thread {
+	sort.Slice(t.Strings, func(i, j int) bool {
+		if t.Strings[i].Order == -1 {
+			return false
+		} else if t.Strings[j].Order == -1 {
+			return true
+		}
+
+		return t.Strings[i].Order < t.Strings[j].Order
+	})
+
 	return t
 }

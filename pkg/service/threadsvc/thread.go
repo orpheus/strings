@@ -51,7 +51,7 @@ func (t *ThreadService) PostThread(thread *core.Thread) (*core.Thread, error) {
 		if err != nil {
 			return nil, err
 		}
-		return updatedThread.FilterDeleted(), nil
+		return updatedThread.FilterDeleted().SortByOrder(), nil
 	}
 }
 

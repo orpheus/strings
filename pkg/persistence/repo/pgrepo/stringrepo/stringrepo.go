@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/orpheus/strings/pkg/core"
 	"github.com/orpheus/strings/pkg/persistence/dao/stringdao"
+	"sort"
 	"time"
 )
 
@@ -195,6 +196,10 @@ func (s *StringRepository) ArchiveStringByStringId(stringId uuid.UUID) error {
 		return err
 	}
 
+	sort.Slice(versionedStrings, func(i, j int) bool {
+		return versionedStrings[i].Order < versionedStrings[j].Order
+	})
+
 	archivedString := false
 	for _, versionedString := range versionedStrings {
 
@@ -248,7 +253,7 @@ func (s *StringRepository) RestoreStringByStringId(stringId uuid.UUID) error {
 
 	_, err = s.VersionedStringDao.Save(newVersionedStringRecord(serverString, func(versionedString *stringdao.VersionedStringRecord) {
 		versionedString.Archived = false
-		versionedString.Order = len(versionedStrings) + 1
+		versionedString.Order = len(versionedStrings)
 	}))
 	if err != nil {
 		return fmt.Errorf("failed to restore string: %s", err)
