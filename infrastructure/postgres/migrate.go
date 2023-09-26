@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/orpheus/strings/util"
 	"io/ioutil"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 )
 
 func Migrate(conn *pgxpool.Pool) {
-	sqlPath := "infrastructure/postgres/sql"
-	files, err := ioutil.ReadDir(sqlPath)
+	defaultSqlPath := "infrastructure/postgres/sql"
+	sqlPath := util.GetEnv("SQL_MIGRATION_SCRIPTS", defaultSqlPath)
+	files, err := os.ReadDir(sqlPath)
 	if err != nil {
 		log.Fatalf("Can not find sql at sqlPath (%s): %s", sqlPath, err.Error())
 	}
@@ -25,16 +28,16 @@ func Migrate(conn *pgxpool.Pool) {
 	defer func() {
 		if err != nil {
 			tx.Rollback(context.TODO())
-			fmt.Println("Rolled back migration: ", err)
+			log.Println("Rolled back migration: ", err)
 		} else {
 			tx.Commit(context.TODO())
-			fmt.Println("Committed migrations")
+			log.Println("Committed migrations")
 		}
 	}()
 
 	versions := make(map[string]string)
 	for _, file := range files {
-		fmt.Println(file.Name(), file.IsDir())
+		log.Println(file.Name(), file.IsDir())
 		fn := file.Name()
 		validator := regexp.MustCompile("^V\\d+.\\d+.\\d+__\\w+\\.(sql)$")
 		validMigrationScript := validator.MatchString(fn)
