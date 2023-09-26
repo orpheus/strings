@@ -46,5 +46,8 @@ docker-run: ## : Run docker image
 		-e DB_PASS=password \
 		psytek/strings:local
 
-docker-exec: ## : Run docker image
+docker-exec: ## : Run docker image in exec mode for debug
 	docker run -it psytek/strings:local sh
+
+docker-push: docker ## : Push docker image to docker hub
+	docker push psytek/strings:local
