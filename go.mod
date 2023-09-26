@@ -1,6 +1,6 @@
 module github.com/orpheus/strings
 
-go 1.17
+go 1.21.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0

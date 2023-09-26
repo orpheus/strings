@@ -15,6 +15,7 @@ type String struct {
 	Order       int       `json:"order"`
 	Active      bool      `json:"active"`
 	Archived    bool      `json:"archived"`
+	Private     bool      `json:"private"`
 	Deleted     bool      `json:"deleted"`
 	DateCreated time.Time `json:"dateCreated"`
 }
@@ -37,4 +38,8 @@ func (s *String) Diff(other *String) bool {
 	}
 
 	return !reflect.DeepEqual(this, that)
+}
+
+func (s *String) Locked() bool {
+	return s.Archived || s.Deleted
 }

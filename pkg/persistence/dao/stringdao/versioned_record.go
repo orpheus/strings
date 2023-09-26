@@ -15,6 +15,7 @@ type VersionedStringRecord struct {
 	Order       int
 	Active      bool
 	Archived    bool
+	Private     bool
 	Deleted     bool
 	DateCreated time.Time
 }
@@ -29,6 +30,7 @@ func (v *VersionedStringRecord) ToString() *core.String {
 		Order:       v.Order,
 		Active:      v.Active,
 		Archived:    v.Archived,
+		Private:     v.Private,
 		Deleted:     v.Deleted,
 		DateCreated: v.DateCreated,
 	}

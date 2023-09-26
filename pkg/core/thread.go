@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"reflect"
+	"sort"
 	"time"
 )
 
@@ -80,4 +81,35 @@ func (t *Thread) DiffStringsOnly(otherThread *Thread) bool {
 
 	// return false if no changes found between strings in this and that thread
 	return false
+}
+
+func (t *Thread) Locked() bool {
+	return t.Deleted == true || t.Archived == true
+}
+
+func (t *Thread) FilterDeleted() *Thread {
+	var filteredStrings []*String
+
+	for _, str := range t.Strings {
+		if !str.Deleted {
+			filteredStrings = append(filteredStrings, str)
+		}
+	}
+
+	t.Strings = filteredStrings
+	return t
+}
+
+func (t *Thread) SortByOrder() *Thread {
+	sort.Slice(t.Strings, func(i, j int) bool {
+		if t.Strings[i].Order == -1 {
+			return false
+		} else if t.Strings[j].Order == -1 {
+			return true
+		}
+
+		return t.Strings[i].Order < t.Strings[j].Order
+	})
+
+	return t
 }

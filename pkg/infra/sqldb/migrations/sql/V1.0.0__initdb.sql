@@ -35,6 +35,7 @@ create table if not exists versioned_string
     "order"      int                      not null,
     active       bool                     not null default false,
     archived     bool                     not null default false,
+    private      bool                     not null default false,
     deleted      bool                     not null default false,
     date_created timestamp with time zone not null default current_timestamp,
 
